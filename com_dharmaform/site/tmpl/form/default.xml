@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<metadata>
+	<layout title="COM_DHARMAFORM_VIEW_FORM_TITLE">
+		<message>COM_DHARMAFORM_VIEW_FORM_DESC</message>
+	</layout>
+	<fields name="request">
+		<fieldset name="request" addfieldprefix="Dharma\Component\DharmaForm\Administrator\Field">
+			<field name="code" type="formcode" label="COM_DHARMAFORM_FIELD_FORM_LABEL" required="true" />
+		</fieldset>
+	</fields>
+</metadata>

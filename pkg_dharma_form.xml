@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="package" method="upgrade">
+	<name>PKG_DHARMA_FORM</name>
+	<packagename>dharmaform</packagename>
+	<creationDate>2026-11</creationDate>
+	<author>Dharma</author>
+	<copyright>(C) 2026 Dharma. Все права защищены.</copyright>
+	<license>GNU General Public License версии 2 или новее; см. LICENSE.txt</license>
+	<version>0.1.0</version>
+	<description>PKG_DHARMA_FORM_XML_DESCRIPTION</description>
+	<scriptfile>script.php</scriptfile>
+	<updateservers>
+		<server type="extension" priority="1" name="Dharma Form">https://raw.githubusercontent.com/shivayanamahom/com_dharma_form/main/updates.xml</server>
+	</updateservers>
+	<files>
+		<file type="component" id="com_dharmaform">com_dharmaform.zip</file>
+		<file type="plugin" id="dharmaform" group="system">plg_system_dharmaform.zip</file>
+		<file type="plugin" id="dharmaform" group="task">plg_task_dharmaform.zip</file>
+		<file type="plugin" id="email" group="dharmaformnotify">plg_dharmaformnotify_email.zip</file>
+		<file type="plugin" id="telegram" group="dharmaformnotify">plg_dharmaformnotify_telegram.zip</file>
+		<file type="plugin" id="max" group="dharmaformnotify">plg_dharmaformnotify_max.zip</file>
+	</files>
+	<languages folder="language">
+		<language tag="en-GB">en-GB/pkg_dharma_form.sys.ini</language>
+		<language tag="ru-RU">ru-RU/pkg_dharma_form.sys.ini</language>
+	</languages>
+</extension>

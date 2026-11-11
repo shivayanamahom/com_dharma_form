@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="component" version="5.2" method="upgrade">
+	<name>COM_DHARMAFORM</name>
+	<creationDate>2026-11</creationDate>
+	<author>Dharma</author>
+	<copyright>(C) 2026 Dharma. Все права защищены.</copyright>
+	<license>GNU General Public License версии 2 или новее; см. LICENSE.txt</license>
+	<version>0.1.0</version>
+	<description>COM_DHARMAFORM_XML_DESCRIPTION</description>
+	<namespace path="src">Dharma\Component\DharmaForm</namespace>
+
+	<install>
+		<sql>
+			<file driver="mysql" charset="utf8">sql/install.mysql.utf8.sql</file>
+		</sql>
+	</install>
+	<uninstall>
+		<sql>
+			<file driver="mysql" charset="utf8">sql/uninstall.mysql.utf8.sql</file>
+		</sql>
+	</uninstall>
+	<update>
+		<schemas>
+			<schemapath type="mysql">sql/updates/mysql</schemapath>
+		</schemas>
+	</update>
+
+	<files folder="site">
+		<folder>layouts</folder>
+		<folder>src</folder>
+		<folder>tmpl</folder>
+	</files>
+
+	<media destination="com_dharmaform" folder="media">
+		<folder>css</folder>
+		<folder>js</folder>
+		<filename>joomla.asset.json</filename>
+	</media>
+
+	<languages folder="site">
+		<language tag="ru-RU">language/ru-RU/com_dharmaform.ini</language>
+		<language tag="en-GB">language/en-GB/com_dharmaform.ini</language>
+	</languages>
+
+	<administration>
+		<menu>COM_DHARMAFORM</menu>
+		<submenu>
+			<menu link="option=com_dharmaform&amp;view=forms" view="forms">COM_DHARMAFORM_MENU_FORMS</menu>
+			<menu link="option=com_dharmaform&amp;view=submissions" view="submissions">COM_DHARMAFORM_MENU_SUBMISSIONS</menu>
+			<menu link="option=com_config&amp;view=component&amp;component=com_dharmaform">COM_DHARMAFORM_MENU_SETTINGS</menu>
+		</submenu>
+		<files folder="admin">
+			<filename>access.xml</filename>
+			<filename>config.xml</filename>
+			<folder>forms</folder>
+			<folder>language</folder>
+			<folder>services</folder>
+			<folder>sql</folder>
+			<folder>src</folder>
+			<folder>tmpl</folder>
+		</files>
+		<languages folder="admin">
+			<language tag="ru-RU">language/ru-RU/com_dharmaform.ini</language>
+			<language tag="ru-RU">language/ru-RU/com_dharmaform.sys.ini</language>
+			<language tag="en-GB">language/en-GB/com_dharmaform.ini</language>
+			<language tag="en-GB">language/en-GB/com_dharmaform.sys.ini</language>
+		</languages>
+	</administration>
+</extension>

@@ -1,0 +1,549 @@
+/* Dharma Form: форма и окно. Самодостаточно (без Bootstrap); цвета — переменные --dharma-* сайта, иначе запасные. */
+
+.dharmaform,
+.dharmaform-modal,
+.dharmaform__open {
+    --dform-primary: var(--dharma-primary, #0d6efd);
+    --dform-primary-rgb: var(--dharma-primary-rgb, 13, 110, 253);
+    --dform-ink: var(--dharma-ink, #212529);
+    --dform-muted: var(--dharma-muted, #6c757d);
+    --dform-surface: var(--dharma-surface, #fff);
+    --dform-gray: var(--dharma-surface-gray, #f3f4f6);
+    --dform-danger: #c43d49;
+    --dform-radius: 1rem;
+    --dform-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236c757d' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+
+.dharmaform,
+.dharmaform *,
+.dharmaform-modal,
+.dharmaform-modal * {
+    box-sizing: border-box;
+}
+
+.dharmaform {
+    color: var(--dform-ink);
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+.dharmaform__title {
+    margin: 0 0 1rem;
+    font-size: 1.625rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.dharmaform__intro {
+    margin: 0 0 1.5rem;
+}
+
+.dharmaform__intro > :last-child {
+    margin-bottom: 0;
+}
+
+.dharmaform__grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.dharmaform__col-12,
+.dharmaform__col-6 {
+    grid-column: span 12;
+    min-width: 0;
+}
+
+@media (min-width: 576px) {
+    .dharmaform__col-6 {
+        grid-column: span 6;
+    }
+}
+
+.dharmaform__label {
+    display: block;
+    margin: 0 0 .375rem;
+    font-size: .875rem;
+    font-weight: 600;
+}
+
+.dharmaform__star {
+    color: var(--dform-danger);
+}
+
+/* ---------- поля ---------- */
+
+.dharmaform__control {
+    display: block;
+    width: 100%;
+    min-height: 56px;
+    margin: 0;
+    padding: .6875rem 1rem;
+    border: 1px solid var(--dform-gray);
+    border-radius: var(--dform-radius);
+    background: var(--dform-gray);
+    color: inherit;
+    font: inherit;
+    transition: border-color .2s, box-shadow .2s, background-color .2s;
+}
+
+textarea.dharmaform__control {
+    min-height: 7rem;
+    resize: vertical;
+}
+
+.dharmaform__control::placeholder {
+    color: var(--dform-muted);
+    opacity: .85;
+}
+
+.dharmaform__control:focus {
+    border-color: var(--dform-primary);
+    background-color: var(--dform-surface);
+    box-shadow: 0 0 0 .2rem rgba(var(--dform-primary-rgb), .15);
+    outline: 0;
+}
+
+select.dharmaform__control {
+    padding-right: 2.75rem;
+    background-image: var(--dform-chevron);
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1.25rem;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.dharmaform__field.is-invalid .dharmaform__control {
+    border-color: var(--dform-danger);
+}
+
+.dharmaform__error {
+    margin-top: .3rem;
+    padding-left: .25rem;
+    color: var(--dform-danger);
+    font-size: .8125rem;
+}
+
+.dharmaform__error:empty {
+    display: none;
+}
+
+/* ---------- флажки и переключатели ---------- */
+
+.dharmaform__check {
+    display: flex;
+    align-items: flex-start;
+    gap: .75rem;
+    margin: .25rem 0;
+    cursor: pointer;
+    font-size: .9375rem;
+}
+
+.dharmaform__check-input {
+    flex: 0 0 auto;
+    width: 1.125rem;
+    height: 1.125rem;
+    margin: .1875rem 0 0;
+    border: 1.5px solid var(--dform-muted);
+    border-radius: .3rem;
+    background: var(--dform-surface) center / .75rem no-repeat;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.dharmaform__check-input[type="radio"] {
+    border-radius: 50%;
+}
+
+.dharmaform__check-input:checked {
+    border-color: var(--dform-primary);
+    background-color: var(--dform-primary);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m3.5 8.5 3 3 6-6.5'/%3E%3C/svg%3E");
+}
+
+.dharmaform__check-input[type="radio"]:checked {
+    background-image: radial-gradient(circle, #fff 0 .22rem, transparent .25rem);
+}
+
+.dharmaform__check-input:focus-visible {
+    box-shadow: 0 0 0 .2rem rgba(var(--dform-primary-rgb), .25);
+    outline: 0;
+}
+
+.dharmaform__field--consent .dharmaform__check {
+    font-size: .875rem;
+}
+
+.dharmaform__check a {
+    color: inherit;
+    text-decoration: underline;
+}
+
+.dharmaform__field.is-invalid .dharmaform__check-input {
+    border-color: var(--dform-danger);
+}
+
+.dharmaform__content {
+    font-size: .875rem;
+}
+
+.dharmaform__content > :last-child {
+    margin-bottom: 0;
+}
+
+/* ---------- файлы ---------- */
+
+.dharmaform__file-area {
+    position: relative;
+}
+
+.dharmaform__file-input {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+    font-size: 0;
+}
+
+.dharmaform__upload-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    min-height: 56px;
+    padding: 0 1.5rem;
+    border-radius: var(--dform-radius);
+    background: var(--dform-gray);
+    font-weight: 600;
+    transition: background-color .2s;
+}
+
+.dharmaform__file-area:hover .dharmaform__upload-btn {
+    background: rgba(var(--dform-primary-rgb), .1);
+}
+
+.dharmaform__file--dropzone .dharmaform__file-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .5rem;
+    padding: 1.5rem 1rem;
+    border: 2px dashed rgba(var(--dform-primary-rgb), .35);
+    border-radius: var(--dform-radius);
+    text-align: center;
+    transition: border-color .2s, background-color .2s;
+}
+
+.dharmaform__file--dropzone .dharmaform__file-area:hover,
+.dharmaform__file--dropzone .is-dragover {
+    border-color: var(--dform-primary);
+    background: rgba(var(--dform-primary-rgb), .05);
+}
+
+.dharmaform__drop-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    background: rgba(var(--dform-primary-rgb), .1);
+    color: var(--dform-primary);
+}
+
+.dharmaform__file-area:focus-within {
+    outline: 2px solid var(--dform-primary);
+    outline-offset: 2px;
+    border-radius: var(--dform-radius);
+}
+
+.dharmaform__hint {
+    color: var(--dform-muted);
+    font-size: .8125rem;
+}
+
+.dharmaform__file-list {
+    margin: .5rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.dharmaform__file-list:empty {
+    display: none;
+}
+
+.dharmaform__file-item {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .375rem .75rem;
+    margin-top: .25rem;
+    border-radius: .625rem;
+    background: var(--dform-gray);
+    font-size: .875rem;
+}
+
+.dharmaform__file-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dharmaform__file-size {
+    color: var(--dform-muted);
+    font-size: .75rem;
+}
+
+.dharmaform__file-remove {
+    flex: 0 0 auto;
+    width: 1.75rem;
+    height: 1.75rem;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--dform-muted);
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.dharmaform__file-remove:hover {
+    background: rgba(0, 0, 0, .08);
+    color: var(--dform-ink);
+}
+
+/* ---------- кнопки ---------- */
+
+.dharmaform__submit,
+.dharmaform__open {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .75rem;
+    min-height: 56px;
+    padding: .75rem 1.75rem;
+    border: 0;
+    border-radius: var(--dform-radius);
+    background: var(--dform-primary);
+    color: #fff;
+    font: inherit;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: filter .2s, box-shadow .2s;
+}
+
+.dharmaform__submit {
+    width: 100%;
+    margin-top: 1.5rem;
+}
+
+.dharmaform__submit::after {
+    content: "";
+    flex: 0 0 auto;
+    width: 1rem;
+    height: 1rem;
+    background: currentColor;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 13 13 3M5 3h8v8'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 13 13 3M5 3h8v8'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.dharmaform__submit:hover,
+.dharmaform__open:hover {
+    filter: brightness(.92);
+    color: #fff;
+}
+
+.dharmaform__submit:focus-visible,
+.dharmaform__open:focus-visible {
+    outline: 2px solid var(--dform-primary);
+    outline-offset: 2px;
+}
+
+.dharmaform__submit:disabled {
+    opacity: .6;
+    cursor: progress;
+}
+
+.dharmaform__open.is-loading {
+    cursor: progress;
+    opacity: .75;
+}
+
+.dharmaform__alert {
+    margin-top: 1rem;
+    padding: .75rem 1rem;
+    border-radius: var(--dform-radius);
+    background: rgba(196, 61, 73, .1);
+    color: var(--dform-danger);
+    font-size: .875rem;
+}
+
+/* ---------- «спасибо» ---------- */
+
+.dharmaform__thanks {
+    padding: 1rem 0 .5rem;
+    text-align: center;
+}
+
+.dharmaform__thanks-icon {
+    display: block;
+    width: 4rem;
+    height: 4rem;
+    margin: 0 auto 1rem;
+    color: var(--dform-primary);
+}
+
+.dharmaform__thanks-icon circle {
+    fill: rgba(var(--dform-primary-rgb), .12);
+}
+
+.dharmaform__thanks-icon path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 24;
+    stroke-dashoffset: 24;
+    animation: dform-draw .5s .15s ease forwards;
+}
+
+.dharmaform__thanks-text {
+    font-size: 1.0625rem;
+}
+
+.dharmaform__thanks-text > :first-child {
+    font-size: 1.625rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+@keyframes dform-draw {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+/* ---------- окно ---------- */
+
+html.dharmaform-lock {
+    overflow: hidden;
+    scrollbar-gutter: stable;
+}
+
+.dharmaform-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1055;
+    overflow-y: auto;
+    background: rgba(17, 24, 39, .55);
+    opacity: 0;
+    transition: opacity .2s;
+}
+
+.dharmaform-modal.is-open {
+    opacity: 1;
+}
+
+.dharmaform-modal__dialog {
+    display: flex;
+    align-items: center;
+    min-height: 100%;
+    max-width: 31rem;
+    margin: 0 auto;
+    padding: 1.75rem 1rem;
+    transform: translateY(1rem);
+    transition: transform .25s;
+}
+
+.dharmaform-modal.is-open .dharmaform-modal__dialog {
+    transform: none;
+}
+
+.dharmaform-modal__content {
+    position: relative;
+    width: 100%;
+    padding: 2.5rem;
+    border-radius: 1.5rem;
+    background: var(--dform-surface);
+    color: var(--dform-ink);
+    box-shadow: 0 1.75rem 5rem rgba(0, 0, 0, .22);
+}
+
+.dharmaform-modal__title {
+    margin: 0 3rem 1.25rem 0;
+    font-size: 1.625rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.dharmaform-modal__title:empty {
+    display: none;
+}
+
+.dharmaform-modal__close {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: var(--dform-gray);
+    color: var(--dform-ink);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: transform .25s, background-color .2s;
+}
+
+.dharmaform-modal__close:hover {
+    background: rgba(var(--dform-primary-rgb), .12);
+    transform: rotate(90deg);
+}
+
+.dharmaform-modal__close:focus-visible {
+    outline: 2px solid var(--dform-primary);
+    outline-offset: 2px;
+}
+
+@media (max-width: 575.98px) {
+    .dharmaform-modal__dialog {
+        padding: .5rem;
+    }
+
+    .dharmaform-modal__content {
+        padding: 1.5rem;
+        border-radius: 1.25rem;
+    }
+
+    .dharmaform-modal__close {
+        top: 1rem;
+        right: 1rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dharmaform-modal,
+    .dharmaform-modal__dialog,
+    .dharmaform-modal__close,
+    .dharmaform__control,
+    .dharmaform__thanks-icon path {
+        transition: none;
+        animation: none;
+        stroke-dashoffset: 0;
+    }
+}

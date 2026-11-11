@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form addfieldprefix="Dharma\Component\DharmaForm\Administrator\Field">
+	<fieldset name="details">
+		<field name="id" type="number" label="JGLOBAL_FIELD_ID_LABEL" default="0" readonly="true" class="readonly" />
+		<field name="title" type="text" label="COM_DHARMAFORM_FIELD_TITLE_LABEL" required="true" maxlength="255" filter="string" />
+		<field name="code" type="text" label="COM_DHARMAFORM_FIELD_CODE_LABEL" description="COM_DHARMAFORM_FIELD_CODE_DESC" hint="COM_DHARMAFORM_FIELD_CODE_HINT" maxlength="64" filter="string" />
+		<field name="state" type="list" label="JSTATUS" class="form-select-color-state" default="1" validate="options">
+			<option value="1">JPUBLISHED</option>
+			<option value="0">JUNPUBLISHED</option>
+			<option value="2">JARCHIVED</option>
+			<option value="-2">JTRASHED</option>
+		</field>
+		<field name="access" type="accesslevel" label="JFIELD_ACCESS_LABEL" filter="UINT" validate="options" />
+		<field name="ordering" type="number" label="JFIELD_ORDERING_LABEL" default="0" filter="integer" />
+		<field name="fields" type="subform" label="COM_DHARMAFORM_FORM_FIELDS_LABEL" description="COM_DHARMAFORM_FORM_FIELDS_DESC" multiple="true" min="1" max="50" buttons="add,remove,move" layout="joomla.form.field.subform.repeatable">
+			<form>
+				<field name="type" type="list" label="COM_DHARMAFORM_FIELD_TYPE_LABEL" default="text" validate="options">
+					<option value="text">COM_DHARMAFORM_TYPE_TEXT</option>
+					<option value="email">COM_DHARMAFORM_TYPE_EMAIL</option>
+					<option value="textarea">COM_DHARMAFORM_TYPE_TEXTAREA</option>
+					<option value="tel">COM_DHARMAFORM_TYPE_TEL</option>
+					<option value="select">COM_DHARMAFORM_TYPE_SELECT</option>
+					<option value="radio">COM_DHARMAFORM_TYPE_RADIO</option>
+					<option value="checkboxes">COM_DHARMAFORM_TYPE_CHECKBOXES</option>
+					<option value="date">COM_DHARMAFORM_TYPE_DATE</option>
+					<option value="file">COM_DHARMAFORM_TYPE_FILE</option>
+					<option value="hidden">COM_DHARMAFORM_TYPE_HIDDEN</option>
+					<option value="consent">COM_DHARMAFORM_TYPE_CONSENT</option>
+					<option value="content">COM_DHARMAFORM_TYPE_CONTENT</option>
+				</field>
+				<field name="label" type="text" label="COM_DHARMAFORM_FIELD_LABEL_LABEL" description="COM_DHARMAFORM_FIELD_LABEL_DESC" maxlength="255" filter="string" showon="type!:content" />
+				<field name="name" type="text" label="COM_DHARMAFORM_FIELD_NAME_LABEL" description="COM_DHARMAFORM_FIELD_NAME_DESC" hint="COM_DHARMAFORM_FIELD_NAME_HINT" maxlength="32" filter="string" showon="type!:content" />
+				<field name="placeholder" type="text" label="COM_DHARMAFORM_FIELD_PLACEHOLDER_LABEL" maxlength="255" filter="string" showon="type:text[OR]type:email[OR]type:textarea[OR]type:tel[OR]type:select[OR]type:date" />
+				<field name="required" type="radio" label="COM_DHARMAFORM_FIELD_REQUIRED_LABEL" layout="joomla.form.field.radio.switcher" default="0" filter="integer" showon="type!:hidden[AND]type!:content">
+					<option value="0">JNO</option>
+					<option value="1">JYES</option>
+				</field>
+				<field name="error_text" type="text" label="COM_DHARMAFORM_FIELD_ERROR_TEXT_LABEL" description="COM_DHARMAFORM_FIELD_ERROR_TEXT_DESC" maxlength="255" filter="string" showon="type!:hidden[AND]type!:content" />
+				<field name="options" type="textarea" label="COM_DHARMAFORM_FIELD_OPTIONS_LABEL" description="COM_DHARMAFORM_FIELD_OPTIONS_DESC" rows="4" filter="string" showon="type:select[OR]type:radio[OR]type:checkboxes" />
+				<field name="mask" type="text" label="COM_DHARMAFORM_FIELD_MASK_LABEL" description="COM_DHARMAFORM_FIELD_MASK_DESC" hint="+7 (###) ###-##-##" maxlength="40" filter="string" showon="type:tel" />
+				<field name="rows" type="number" label="COM_DHARMAFORM_FIELD_ROWS_LABEL" default="4" min="2" max="20" filter="integer" showon="type:textarea" />
+				<field name="hidden_source" type="list" label="COM_DHARMAFORM_FIELD_HIDDEN_SOURCE_LABEL" description="COM_DHARMAFORM_FIELD_HIDDEN_SOURCE_DESC" default="page_url" validate="options" showon="type:hidden">
+					<option value="page_url">COM_DHARMAFORM_HIDDEN_PAGE_URL</option>
+					<option value="page_title">COM_DHARMAFORM_HIDDEN_PAGE_TITLE</option>
+					<option value="custom">COM_DHARMAFORM_HIDDEN_CUSTOM</option>
+				</field>
+				<field name="hidden_value" type="text" label="COM_DHARMAFORM_FIELD_HIDDEN_VALUE_LABEL" maxlength="255" filter="string" showon="type:hidden[AND]hidden_source:custom" />
+				<field name="consent_text" type="textarea" label="COM_DHARMAFORM_FIELD_CONSENT_TEXT_LABEL" description="COM_DHARMAFORM_FIELD_CONSENT_TEXT_DESC" rows="3" filter="raw" showon="type:consent" />
+				<field name="link_text" type="text" label="COM_DHARMAFORM_FIELD_LINK_TEXT_LABEL" maxlength="255" filter="string" showon="type:consent" />
+				<field name="link_url" type="text" label="COM_DHARMAFORM_FIELD_LINK_URL_LABEL" description="COM_DHARMAFORM_FIELD_LINK_URL_DESC" maxlength="500" filter="string" showon="type:consent" />
+				<field name="content" type="textarea" label="COM_DHARMAFORM_FIELD_CONTENT_LABEL" description="COM_DHARMAFORM_FIELD_CONTENT_DESC" rows="4" filter="raw" showon="type:content" />
+				<field name="file_mode" type="list" label="COM_DHARMAFORM_FIELD_FILE_MODE_LABEL" default="button" validate="options" showon="type:file">
+					<option value="button">COM_DHARMAFORM_FILE_MODE_BUTTON</option>
+					<option value="dropzone">COM_DHARMAFORM_FILE_MODE_DROPZONE</option>
+				</field>
+				<field name="file_multiple" type="radio" label="COM_DHARMAFORM_FIELD_FILE_MULTIPLE_LABEL" layout="joomla.form.field.radio.switcher" default="0" filter="integer" showon="type:file">
+					<option value="0">JNO</option>
+					<option value="1">JYES</option>
+				</field>
+				<field name="file_accept" type="text" label="COM_DHARMAFORM_FIELD_FILE_ACCEPT_LABEL" description="COM_DHARMAFORM_FIELD_FILE_ACCEPT_DESC" hint="jpg, png, pdf, doc, docx" maxlength="120" default="jpg, jpeg, png, pdf, doc, docx" filter="string" showon="type:file" />
+				<field name="file_max_mb" type="number" label="COM_DHARMAFORM_FIELD_FILE_MAX_MB_LABEL" description="COM_DHARMAFORM_FIELD_FILE_MAX_MB_DESC" default="5" min="1" max="50" filter="integer" showon="type:file" />
+				<field name="file_max_count" type="number" label="COM_DHARMAFORM_FIELD_FILE_MAX_COUNT_LABEL" description="COM_DHARMAFORM_FIELD_FILE_MAX_COUNT_DESC" default="5" min="1" max="20" filter="integer" showon="type:file[AND]file_multiple:1" />
+				<field name="maps_to" type="list" label="COM_DHARMAFORM_FIELD_MAPS_LABEL" description="COM_DHARMAFORM_FIELD_MAPS_DESC" default="" validate="options" showon="type:text[OR]type:email[OR]type:textarea[OR]type:tel[OR]type:select[OR]type:radio">
+					<option value="">COM_DHARMAFORM_MAPS_NONE</option>
+					<option value="name">COM_DHARMAFORM_MAPS_NAME</option>
+					<option value="phone">COM_DHARMAFORM_MAPS_PHONE</option>
+					<option value="email">COM_DHARMAFORM_MAPS_EMAIL</option>
+					<option value="message">COM_DHARMAFORM_MAPS_MESSAGE</option>
+				</field>
+				<field name="width" type="list" label="COM_DHARMAFORM_FIELD_WIDTH_LABEL" default="12" validate="options" showon="type!:content">
+					<option value="12">COM_DHARMAFORM_WIDTH_FULL</option>
+					<option value="6">COM_DHARMAFORM_WIDTH_HALF</option>
+				</field>
+			</form>
+		</field>
+	</fieldset>
+	<fields name="params">
+		<fieldset name="window">
+			<field name="modal_title" type="text" label="COM_DHARMAFORM_FORM_MODAL_TITLE_LABEL" description="COM_DHARMAFORM_FORM_MODAL_TITLE_DESC" maxlength="255" filter="string" />
+			<field name="modal_intro" type="textarea" label="COM_DHARMAFORM_FORM_MODAL_INTRO_LABEL" description="COM_DHARMAFORM_FORM_MODAL_INTRO_DESC" rows="3" maxlength="2000" filter="raw" />
+			<field name="submit_text" type="text" label="COM_DHARMAFORM_FORM_SUBMIT_TEXT_LABEL" description="COM_DHARMAFORM_FORM_SUBMIT_TEXT_DESC" maxlength="100" filter="string" />
+			<field name="button_class" type="text" label="COM_DHARMAFORM_FORM_BUTTON_CLASS_LABEL" description="COM_DHARMAFORM_FORM_BUTTON_CLASS_DESC" maxlength="255" filter="string" />
+			<field name="show_labels" type="radio" label="COM_DHARMAFORM_FORM_SHOW_LABELS_LABEL" description="COM_DHARMAFORM_FORM_SHOW_LABELS_DESC" layout="joomla.form.field.radio.switcher" default="1" filter="integer">
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field name="trigger_class" type="text" label="COM_DHARMAFORM_FORM_TRIGGER_CLASS_LABEL" description="COM_DHARMAFORM_FORM_TRIGGER_CLASS_DESC" maxlength="255" filter="string" />
+		</fieldset>
+		<fieldset name="auto">
+			<field name="auto_enabled" type="radio" label="COM_DHARMAFORM_FORM_AUTO_ENABLED_LABEL" description="COM_DHARMAFORM_FORM_AUTO_ENABLED_DESC" layout="joomla.form.field.radio.switcher" default="0" filter="integer">
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field name="auto_triggers" type="checkboxes" label="COM_DHARMAFORM_FORM_AUTO_TRIGGERS_LABEL" description="COM_DHARMAFORM_FORM_AUTO_TRIGGERS_DESC" default="delay" showon="auto_enabled:1">
+				<option value="delay">COM_DHARMAFORM_FORM_AUTO_TRIGGER_DELAY</option>
+				<option value="scroll">COM_DHARMAFORM_FORM_AUTO_TRIGGER_SCROLL</option>
+				<option value="exit">COM_DHARMAFORM_FORM_AUTO_TRIGGER_EXIT</option>
+				<option value="idle">COM_DHARMAFORM_FORM_AUTO_TRIGGER_IDLE</option>
+			</field>
+			<field name="auto_delay" type="number" label="COM_DHARMAFORM_FORM_AUTO_DELAY_LABEL" description="COM_DHARMAFORM_FORM_AUTO_DELAY_DESC" default="10" min="0" max="600" filter="integer" showon="auto_enabled:1[AND]auto_triggers:delay" />
+			<field name="auto_scroll" type="number" label="COM_DHARMAFORM_FORM_AUTO_SCROLL_LABEL" description="COM_DHARMAFORM_FORM_AUTO_SCROLL_DESC" default="50" min="1" max="100" filter="integer" showon="auto_enabled:1[AND]auto_triggers:scroll" />
+			<field name="auto_idle" type="number" label="COM_DHARMAFORM_FORM_AUTO_IDLE_LABEL" description="COM_DHARMAFORM_FORM_AUTO_IDLE_DESC" default="30" min="5" max="3600" filter="integer" showon="auto_enabled:1[AND]auto_triggers:idle" />
+			<field name="auto_frequency" type="list" label="COM_DHARMAFORM_FORM_AUTO_FREQUENCY_LABEL" description="COM_DHARMAFORM_FORM_AUTO_FREQUENCY_DESC" default="session" validate="options" showon="auto_enabled:1">
+				<option value="always">COM_DHARMAFORM_FORM_AUTO_FREQ_ALWAYS</option>
+				<option value="session">COM_DHARMAFORM_FORM_AUTO_FREQ_SESSION</option>
+				<option value="days">COM_DHARMAFORM_FORM_AUTO_FREQ_DAYS</option>
+			</field>
+			<field name="auto_days" type="number" label="COM_DHARMAFORM_FORM_AUTO_DAYS_LABEL" description="COM_DHARMAFORM_FORM_AUTO_DAYS_DESC" default="7" min="1" max="365" filter="integer" showon="auto_enabled:1[AND]auto_frequency:days" />
+			<field name="auto_devices" type="list" label="COM_DHARMAFORM_FORM_AUTO_DEVICES_LABEL" default="all" validate="options" showon="auto_enabled:1">
+				<option value="all">COM_DHARMAFORM_FORM_AUTO_DEV_ALL</option>
+				<option value="desktop">COM_DHARMAFORM_FORM_AUTO_DEV_DESKTOP</option>
+				<option value="mobile">COM_DHARMAFORM_FORM_AUTO_DEV_MOBILE</option>
+			</field>
+			<field name="auto_pages_mode" type="list" label="COM_DHARMAFORM_FORM_AUTO_PAGES_MODE_LABEL" default="include" validate="options" showon="auto_enabled:1">
+				<option value="include">COM_DHARMAFORM_FORM_AUTO_PAGES_INCLUDE</option>
+				<option value="exclude">COM_DHARMAFORM_FORM_AUTO_PAGES_EXCLUDE</option>
+			</field>
+			<field name="auto_pages" type="textarea" label="COM_DHARMAFORM_FORM_AUTO_PAGES_LABEL" description="COM_DHARMAFORM_FORM_AUTO_PAGES_DESC" rows="4" hint="/uslugi/*" filter="string" showon="auto_enabled:1" />
+		</fieldset>
+		<fieldset name="after">
+			<field name="after_action" type="list" label="COM_DHARMAFORM_FORM_AFTER_ACTION_LABEL" description="COM_DHARMAFORM_FORM_AFTER_ACTION_DESC" default="message" validate="options">
+				<option value="message">COM_DHARMAFORM_FORM_AFTER_MESSAGE</option>
+				<option value="redirect">COM_DHARMAFORM_FORM_AFTER_REDIRECT</option>
+			</field>
+			<field name="success_message" type="textarea" label="COM_DHARMAFORM_FORM_SUCCESS_MESSAGE_LABEL" description="COM_DHARMAFORM_FORM_SUCCESS_MESSAGE_DESC" rows="3" maxlength="2000" filter="raw" showon="after_action:message" />
+			<field name="success_redirect" type="text" label="COM_DHARMAFORM_FORM_SUCCESS_REDIRECT_LABEL" description="COM_DHARMAFORM_FORM_SUCCESS_REDIRECT_DESC" maxlength="500" hint="https://" filter="string" showon="after_action:redirect" />
+			<field name="after_delay" type="number" label="COM_DHARMAFORM_FORM_AFTER_DELAY_LABEL" description="COM_DHARMAFORM_FORM_AFTER_DELAY_DESC" default="3" min="0" max="60" filter="integer" />
+			<field name="close_modal" type="radio" label="COM_DHARMAFORM_FORM_CLOSE_MODAL_LABEL" description="COM_DHARMAFORM_FORM_CLOSE_MODAL_DESC" layout="joomla.form.field.radio.switcher" default="1" filter="integer" showon="after_action:message">
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field name="goal_name" type="text" label="COM_DHARMAFORM_FORM_GOAL_NAME_LABEL" description="COM_DHARMAFORM_FORM_GOAL_NAME_DESC" maxlength="64" filter="string" />
+			<field name="metrika_counter" type="text" label="COM_DHARMAFORM_FORM_METRIKA_COUNTER_LABEL" description="COM_DHARMAFORM_FORM_METRIKA_COUNTER_DESC" maxlength="16" filter="string" />
+			<field name="consent_url" type="text" label="COM_DHARMAFORM_FORM_CONSENT_URL_LABEL" description="COM_DHARMAFORM_FORM_CONSENT_URL_DESC" maxlength="500" filter="string" />
+		</fieldset>
+		<fieldset name="protect">
+			<field name="protect_honeypot" type="radio" label="COM_DHARMAFORM_FORM_PROTECT_HONEYPOT_LABEL" description="COM_DHARMAFORM_FORM_PROTECT_HONEYPOT_DESC" layout="joomla.form.field.radio.switcher" default="1" filter="integer">
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field name="protect_min_seconds" type="number" label="COM_DHARMAFORM_FORM_PROTECT_MIN_SECONDS_LABEL" description="COM_DHARMAFORM_FORM_PROTECT_MIN_SECONDS_DESC" default="3" min="0" max="60" filter="integer" />
+			<field name="protect_rate_limit" type="number" label="COM_DHARMAFORM_FORM_PROTECT_RATE_LIMIT_LABEL" description="COM_DHARMAFORM_FORM_PROTECT_RATE_LIMIT_DESC" default="5" min="0" max="100" filter="integer" />
+			<field name="protect_flood_limit" type="number" label="COM_DHARMAFORM_FORM_PROTECT_FLOOD_LIMIT_LABEL" description="COM_DHARMAFORM_FORM_PROTECT_FLOOD_LIMIT_DESC" default="0" min="0" max="1000" filter="integer" />
+			<field name="protect_pow" type="radio" label="COM_DHARMAFORM_FORM_PROTECT_POW_LABEL" description="COM_DHARMAFORM_FORM_PROTECT_POW_DESC" layout="joomla.form.field.radio.switcher" default="1" filter="integer">
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field name="protect_pow_bits" type="number" label="COM_DHARMAFORM_FORM_PROTECT_POW_BITS_LABEL" description="COM_DHARMAFORM_FORM_PROTECT_POW_BITS_DESC" default="14" min="8" max="20" filter="integer" showon="protect_pow:1" />
+			<field name="protect_behavior" type="radio" label="COM_DHARMAFORM_FORM_PROTECT_BEHAVIOR_LABEL" description="COM_DHARMAFORM_FORM_PROTECT_BEHAVIOR_DESC" layout="joomla.form.field.radio.switcher" default="1" filter="integer">
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field name="protect_replay" type="radio" label="COM_DHARMAFORM_FORM_PROTECT_REPLAY_LABEL" description="COM_DHARMAFORM_FORM_PROTECT_REPLAY_DESC" layout="joomla.form.field.radio.switcher" default="1" filter="integer">
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field name="protect_links" type="radio" label="COM_DHARMAFORM_FORM_PROTECT_LINKS_LABEL" description="COM_DHARMAFORM_FORM_PROTECT_LINKS_DESC" layout="joomla.form.field.radio.switcher" default="0" filter="integer">
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field name="protect_scripts" type="radio" label="COM_DHARMAFORM_FORM_PROTECT_SCRIPTS_LABEL" description="COM_DHARMAFORM_FORM_PROTECT_SCRIPTS_DESC" layout="joomla.form.field.radio.switcher" default="1" filter="integer">
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field name="protect_gibberish" type="radio" label="COM_DHARMAFORM_FORM_PROTECT_GIBBERISH_LABEL" description="COM_DHARMAFORM_FORM_PROTECT_GIBBERISH_DESC" layout="joomla.form.field.radio.switcher" default="1" filter="integer">
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field name="protect_stopwords" type="textarea" label="COM_DHARMAFORM_FORM_PROTECT_STOPWORDS_LABEL" description="COM_DHARMAFORM_FORM_PROTECT_STOPWORDS_DESC" filter="string" rows="3" maxlength="2000" />
+			<field name="protect_disposable" type="radio" label="COM_DHARMAFORM_FORM_PROTECT_DISPOSABLE_LABEL" description="COM_DHARMAFORM_FORM_PROTECT_DISPOSABLE_DESC" layout="joomla.form.field.radio.switcher" default="1" filter="integer">
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field name="protect_mx" type="radio" label="COM_DHARMAFORM_FORM_PROTECT_MX_LABEL" description="COM_DHARMAFORM_FORM_PROTECT_MX_DESC" layout="joomla.form.field.radio.switcher" default="0" filter="integer">
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
+			<field name="protect_score_limit" type="number" label="COM_DHARMAFORM_FORM_PROTECT_SCORE_LIMIT_LABEL" description="COM_DHARMAFORM_FORM_PROTECT_SCORE_LIMIT_DESC" default="3" min="1" max="20" filter="integer" />
+			<field name="retention_days" type="number" label="COM_DHARMAFORM_FORM_RETENTION_DAYS_LABEL" description="COM_DHARMAFORM_FORM_RETENTION_DAYS_DESC" min="0" max="3650" filter="integer" hint="COM_DHARMAFORM_FORM_RETENTION_HINT" />
+		</fieldset>
+		<fieldset name="notify">
+			<field name="notify_channels" type="plugins" folder="dharmaformnotify" multiple="true" layout="joomla.form.field.list-fancy-select" label="COM_DHARMAFORM_FORM_NOTIFY_CHANNELS_LABEL" description="COM_DHARMAFORM_FORM_NOTIFY_CHANNELS_DESC" />
+			<field name="notify_emails" type="textarea" rows="2" label="COM_DHARMAFORM_FORM_NOTIFY_EMAILS_LABEL" description="COM_DHARMAFORM_FORM_NOTIFY_EMAILS_DESC" filter="string" />
+			<field name="notify_chats" type="telegramchats" multiple="true" layout="joomla.form.field.list-fancy-select" allowCustom="true" label="COM_DHARMAFORM_FORM_NOTIFY_CHATS_LABEL" description="COM_DHARMAFORM_FORM_NOTIFY_CHATS_DESC" />
+			<field name="notify_max_chats" type="maxchats" multiple="true" layout="joomla.form.field.list-fancy-select" allowCustom="true" label="COM_DHARMAFORM_FORM_NOTIFY_MAX_CHATS_LABEL" description="COM_DHARMAFORM_FORM_NOTIFY_MAX_CHATS_DESC" />
+			<field name="notify_subject" type="text" maxlength="255" label="COM_DHARMAFORM_FORM_NOTIFY_SUBJECT_LABEL" description="COM_DHARMAFORM_FORM_NOTIFY_SUBJECT_DESC" filter="string" />
+		</fieldset>
+	</fields>
+</form>

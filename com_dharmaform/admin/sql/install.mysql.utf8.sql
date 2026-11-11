@@ -1,0 +1,62 @@
+CREATE TABLE IF NOT EXISTS `#__dharmaform_forms` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `code` varchar(64) NOT NULL,
+  `title` varchar(255) NOT NULL DEFAULT '',
+  `state` tinyint NOT NULL DEFAULT 1,
+  `ordering` int NOT NULL DEFAULT 0,
+  `access` int unsigned NOT NULL DEFAULT 1,
+  `fields` mediumtext,
+  `params` mediumtext,
+  `created` datetime NOT NULL,
+  `modified` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_code` (`code`),
+  KEY `idx_state` (`state`, `ordering`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 DEFAULT COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `#__dharmaform_submissions` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `form_id` int unsigned NOT NULL,
+  `name` varchar(255) NOT NULL DEFAULT '',
+  `phone` varchar(64) NOT NULL DEFAULT '',
+  `email` varchar(255) NOT NULL DEFAULT '',
+  `message` mediumtext,
+  `fields` mediumtext,
+  `files` mediumtext,
+  `page_url` varchar(500) NOT NULL DEFAULT '',
+  `utm` text,
+  `ip_hash` char(64) NOT NULL DEFAULT '',
+  `consent_at` datetime DEFAULT NULL,
+  `is_spam` tinyint NOT NULL DEFAULT 0,
+  `spam_score` tinyint unsigned NOT NULL DEFAULT 0,
+  `spam_reason` varchar(255) NOT NULL DEFAULT '',
+  `is_read` tinyint NOT NULL DEFAULT 0,
+  `state` tinyint NOT NULL DEFAULT 1,
+  `created` datetime NOT NULL,
+  `purge_after` date DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_form` (`form_id`, `created`),
+  KEY `idx_ip` (`ip_hash`, `created`),
+  KEY `idx_created` (`created`),
+  KEY `idx_flags` (`is_spam`, `is_read`),
+  KEY `idx_purge` (`purge_after`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 DEFAULT COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `#__dharmaform_deliveries` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `submission_id` int unsigned NOT NULL,
+  `channel` varchar(32) NOT NULL,
+  `recipient` varchar(255) NOT NULL DEFAULT '',
+  `recipient_hash` char(64) NOT NULL,
+  `state` tinyint NOT NULL DEFAULT 0,
+  `attempts` tinyint unsigned NOT NULL DEFAULT 0,
+  `claim_key` char(32) NOT NULL DEFAULT '',
+  `error_code` varchar(100) NOT NULL DEFAULT '',
+  `sent` datetime DEFAULT NULL,
+  `next_try` datetime DEFAULT NULL,
+  `created` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_unique` (`submission_id`, `channel`, `recipient_hash`),
+  KEY `idx_retry` (`state`, `next_try`),
+  KEY `idx_claim` (`claim_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 DEFAULT COLLATE=utf8mb4_unicode_ci;

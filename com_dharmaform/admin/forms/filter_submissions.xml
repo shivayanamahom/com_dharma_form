@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form>
+	<fields name="filter">
+		<field name="search" type="text" inputmode="search" label="COM_DHARMAFORM_SUBMISSIONS_FILTER_SEARCH_LABEL" description="COM_DHARMAFORM_SUBMISSIONS_FILTER_SEARCH_DESC" hint="JSEARCH_FILTER" />
+		<field name="form_id" type="sql" label="COM_DHARMAFORM_FILTER_FORM" class="js-select-submit-on-change" query="SELECT id AS value, title AS text FROM #__dharmaform_forms ORDER BY ordering, title" key_field="value" value_field="text">
+			<option value="">COM_DHARMAFORM_FILTER_FORM_SELECT</option>
+		</field>
+		<field name="is_spam" type="list" label="COM_DHARMAFORM_FILTER_SPAM" class="js-select-submit-on-change">
+			<option value="">COM_DHARMAFORM_FILTER_SPAM_SELECT</option>
+			<option value="0">COM_DHARMAFORM_FILTER_SPAM_NO</option>
+			<option value="1">COM_DHARMAFORM_FILTER_SPAM_YES</option>
+		</field>
+		<field name="is_read" type="list" label="COM_DHARMAFORM_FILTER_READ" class="js-select-submit-on-change">
+			<option value="">COM_DHARMAFORM_FILTER_READ_SELECT</option>
+			<option value="0">COM_DHARMAFORM_FILTER_READ_NO</option>
+			<option value="1">COM_DHARMAFORM_FILTER_READ_YES</option>
+		</field>
+		<field name="date_from" type="calendar" label="COM_DHARMAFORM_FILTER_DATE_FROM" format="%Y-%m-%d" hint="COM_DHARMAFORM_FILTER_DATE_FROM" onchange="this.form.submit();" />
+		<field name="date_to" type="calendar" label="COM_DHARMAFORM_FILTER_DATE_TO" format="%Y-%m-%d" hint="COM_DHARMAFORM_FILTER_DATE_TO" onchange="this.form.submit();" />
+	</fields>
+	<fields name="list">
+		<field name="fullordering" type="list" label="JGLOBAL_SORT_BY" default="a.created DESC" onchange="this.form.submit();">
+			<option value="">JGLOBAL_SORT_BY</option>
+			<option value="a.created ASC">COM_DHARMAFORM_SORT_CREATED_ASC</option>
+			<option value="a.created DESC">COM_DHARMAFORM_SORT_CREATED_DESC</option>
+			<option value="a.name ASC">COM_DHARMAFORM_SORT_NAME_ASC</option>
+			<option value="a.name DESC">COM_DHARMAFORM_SORT_NAME_DESC</option>
+			<option value="form_title ASC">COM_DHARMAFORM_SORT_FORM_ASC</option>
+			<option value="form_title DESC">COM_DHARMAFORM_SORT_FORM_DESC</option>
+			<option value="a.id ASC">JGRID_HEADING_ID_ASC</option>
+			<option value="a.id DESC">JGRID_HEADING_ID_DESC</option>
+		</field>
+		<field name="limit" type="limitbox" label="JGLOBAL_LIST_LIMIT" default="25" onchange="this.form.submit();" />
+	</fields>
+</form>

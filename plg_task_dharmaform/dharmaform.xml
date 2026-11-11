@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="plugin" group="task" method="upgrade">
+	<name>PLG_TASK_DHARMAFORM</name>
+	<author>Dharma</author>
+	<creationDate>2026-11</creationDate>
+	<copyright>(C) 2026 Dharma. Все права защищены.</copyright>
+	<license>GNU General Public License версии 2 или новее; см. LICENSE.txt</license>
+	<version>0.1.0</version>
+	<description>PLG_TASK_DHARMAFORM_DESCRIPTION</description>
+	<namespace path="src">Dharma\Plugin\Task\DharmaForm</namespace>
+	<files>
+		<folder plugin="dharmaform">services</folder>
+		<folder>src</folder>
+	</files>
+	<languages>
+		<language tag="ru-RU">language/ru-RU/plg_task_dharmaform.ini</language>
+		<language tag="ru-RU">language/ru-RU/plg_task_dharmaform.sys.ini</language>
+		<language tag="en-GB">language/en-GB/plg_task_dharmaform.ini</language>
+		<language tag="en-GB">language/en-GB/plg_task_dharmaform.sys.ini</language>
+	</languages>
+</extension>

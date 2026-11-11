@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config>
+	<fieldset name="general" label="COM_DHARMAFORM_CONFIG_GENERAL" addfieldprefix="Dharma\Component\DharmaForm\Administrator\Field">
+		<field name="privacy_url" type="text" label="COM_DHARMAFORM_SETTING_PRIVACY_URL_LABEL" description="COM_DHARMAFORM_SETTING_PRIVACY_URL_DESC" hint="/politika" maxlength="500" filter="string" />
+		<field name="upload_dir" type="text" label="COM_DHARMAFORM_SETTING_UPLOAD_DIR_LABEL" description="COM_DHARMAFORM_SETTING_UPLOAD_DIR_DESC" default="media/com_dharmaform/uploads" maxlength="255" filter="string" />
+	</fieldset>
+	<fieldset name="notify" label="COM_DHARMAFORM_CONFIG_NOTIFY" description="COM_DHARMAFORM_CONFIG_NOTIFY_DESC" addfieldprefix="Dharma\Component\DharmaForm\Administrator\Field">
+		<field name="notify_new" type="radio" label="COM_DHARMAFORM_SETTING_NOTIFY_NEW_LABEL" description="COM_DHARMAFORM_SETTING_NOTIFY_NEW_DESC" layout="joomla.form.field.radio.switcher" default="1" filter="integer">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="notify_spam" type="radio" label="COM_DHARMAFORM_SETTING_NOTIFY_SPAM_LABEL" description="COM_DHARMAFORM_SETTING_NOTIFY_SPAM_DESC" layout="joomla.form.field.radio.switcher" default="0" filter="integer">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+
+		<field name="spacer_email" type="spacer" label="COM_DHARMAFORM_SETTING_GROUP_EMAIL" />
+		<field name="notify_email_enabled" type="radio" label="COM_DHARMAFORM_SETTING_NOTIFY_EMAIL_ENABLED_LABEL" description="COM_DHARMAFORM_SETTING_NOTIFY_EMAIL_ENABLED_DESC" layout="joomla.form.field.radio.switcher" default="0" filter="integer">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="notify_email_to" type="textarea" label="COM_DHARMAFORM_SETTING_NOTIFY_EMAIL_TO_LABEL" description="COM_DHARMAFORM_SETTING_NOTIFY_EMAIL_TO_DESC" filter="string" rows="3" hint="info@example.com, manager@example.com" showon="notify_email_enabled:1" />
+		<field name="notify_email_system" type="radio" label="COM_DHARMAFORM_SETTING_NOTIFY_EMAIL_SYSTEM_LABEL" description="COM_DHARMAFORM_SETTING_NOTIFY_EMAIL_SYSTEM_DESC" layout="joomla.form.field.radio.switcher" default="0" filter="integer" showon="notify_email_enabled:1">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="notify_email_subject" type="text" label="COM_DHARMAFORM_SETTING_NOTIFY_EMAIL_SUBJECT_LABEL" description="COM_DHARMAFORM_SETTING_NOTIFY_EMAIL_SUBJECT_DESC" filter="string" default="Новая заявка: {form} — {name}" maxlength="255" showon="notify_email_enabled:1" />
+		<field name="notify_email_replyto" type="radio" label="COM_DHARMAFORM_SETTING_NOTIFY_EMAIL_REPLYTO_LABEL" description="COM_DHARMAFORM_SETTING_NOTIFY_EMAIL_REPLYTO_DESC" layout="joomla.form.field.radio.switcher" default="1" filter="integer" showon="notify_email_enabled:1">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="notify_email_attach" type="radio" label="COM_DHARMAFORM_SETTING_NOTIFY_EMAIL_ATTACH_LABEL" description="COM_DHARMAFORM_SETTING_NOTIFY_EMAIL_ATTACH_DESC" layout="joomla.form.field.radio.switcher" default="1" filter="integer" showon="notify_email_enabled:1">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="notify_email_attach_mb" type="number" label="COM_DHARMAFORM_SETTING_NOTIFY_EMAIL_ATTACH_MB_LABEL" description="COM_DHARMAFORM_SETTING_NOTIFY_EMAIL_ATTACH_MB_DESC" default="10" min="1" max="50" filter="integer" showon="notify_email_enabled:1[AND]notify_email_attach:1" />
+
+		<field name="spacer_telegram" type="spacer" label="COM_DHARMAFORM_SETTING_GROUP_TELEGRAM" />
+		<field name="notify_telegram_enabled" type="radio" label="COM_DHARMAFORM_SETTING_NOTIFY_TELEGRAM_ENABLED_LABEL" description="COM_DHARMAFORM_SETTING_NOTIFY_TELEGRAM_ENABLED_DESC" layout="joomla.form.field.radio.switcher" default="0" filter="integer">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="notify_telegram_token" type="password" label="COM_DHARMAFORM_SETTING_NOTIFY_TELEGRAM_TOKEN_LABEL" description="COM_DHARMAFORM_SETTING_NOTIFY_TELEGRAM_TOKEN_DESC" filter="string" autocomplete="off" maxlength="100" showon="notify_telegram_enabled:1" />
+		<field name="notify_telegram_chats" type="telegramchats" label="COM_DHARMAFORM_SETTING_NOTIFY_TELEGRAM_CHATS_LABEL" description="COM_DHARMAFORM_SETTING_NOTIFY_TELEGRAM_CHATS_DESC" multiple="true" layout="joomla.form.field.list-fancy-select" allowCustom="true" showon="notify_telegram_enabled:1" />
+		<field name="notify_telegram_details" type="radio" label="COM_DHARMAFORM_SETTING_NOTIFY_TELEGRAM_DETAILS_LABEL" description="COM_DHARMAFORM_SETTING_NOTIFY_TELEGRAM_DETAILS_DESC" layout="joomla.form.field.radio.switcher" default="1" filter="integer" showon="notify_telegram_enabled:1">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+
+		<field name="spacer_max" type="spacer" label="COM_DHARMAFORM_SETTING_GROUP_MAX" />
+		<field name="notify_max_enabled" type="radio" label="COM_DHARMAFORM_SETTING_NOTIFY_MAX_ENABLED_LABEL" description="COM_DHARMAFORM_SETTING_NOTIFY_MAX_ENABLED_DESC" layout="joomla.form.field.radio.switcher" default="0" filter="integer">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="notify_max_token" type="password" label="COM_DHARMAFORM_SETTING_NOTIFY_MAX_TOKEN_LABEL" description="COM_DHARMAFORM_SETTING_NOTIFY_MAX_TOKEN_DESC" autocomplete="off" maxlength="300" filter="string" showon="notify_max_enabled:1" />
+		<field name="notify_max_chats" type="maxchats" label="COM_DHARMAFORM_SETTING_NOTIFY_MAX_CHATS_LABEL" description="COM_DHARMAFORM_SETTING_NOTIFY_MAX_CHATS_DESC" multiple="true" layout="joomla.form.field.list-fancy-select" allowCustom="true" showon="notify_max_enabled:1" />
+		<field name="notify_max_details" type="radio" label="COM_DHARMAFORM_SETTING_NOTIFY_MAX_DETAILS_LABEL" description="COM_DHARMAFORM_SETTING_NOTIFY_MAX_DETAILS_DESC" layout="joomla.form.field.radio.switcher" default="1" filter="integer" showon="notify_max_enabled:1">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="notify_max_ca" type="text" label="COM_DHARMAFORM_SETTING_NOTIFY_MAX_CA_LABEL" description="COM_DHARMAFORM_SETTING_NOTIFY_MAX_CA_DESC" hint="/etc/ssl/certs/russian_trusted_root_ca.pem" maxlength="300" filter="string" showon="notify_max_enabled:1" />
+	</fieldset>
+	<fieldset name="spam" label="COM_DHARMAFORM_CONFIG_SPAM" description="COM_DHARMAFORM_CONFIG_SPAM_DESC">
+		<field name="spam_ip_whitelist" type="textarea" label="COM_DHARMAFORM_SETTING_SPAM_IP_WHITELIST_LABEL" description="COM_DHARMAFORM_SETTING_SPAM_IP_WHITELIST_DESC" rows="4" hint="203.0.113.7&#10;198.51.100.0/24" filter="string" />
+		<field name="spam_ip_blacklist" type="textarea" label="COM_DHARMAFORM_SETTING_SPAM_IP_BLACKLIST_LABEL" description="COM_DHARMAFORM_SETTING_SPAM_IP_BLACKLIST_DESC" rows="4" hint="192.0.2.15&#10;2001:db8::/32" filter="string" />
+		<field name="spam_stopwords" type="textarea" label="COM_DHARMAFORM_SETTING_SPAM_STOPWORDS_LABEL" description="COM_DHARMAFORM_SETTING_SPAM_STOPWORDS_DESC" rows="4" filter="string" />
+		<field name="spam_disposable_extra" type="textarea" label="COM_DHARMAFORM_SETTING_SPAM_DISPOSABLE_EXTRA_LABEL" description="COM_DHARMAFORM_SETTING_SPAM_DISPOSABLE_EXTRA_DESC" rows="3" hint="mailinator.com" filter="string" />
+	</fieldset>
+	<fieldset name="permissions" label="JCONFIG_PERMISSIONS_LABEL" description="JCONFIG_PERMISSIONS_DESC">
+		<field name="rules" type="rules" label="JCONFIG_PERMISSIONS_LABEL" validate="rules" filter="rules" component="com_dharmaform" section="component" />
+	</fieldset>
+</config>

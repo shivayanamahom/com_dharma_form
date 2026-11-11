@@ -1,0 +1,24 @@
+{
+	"$schema": "https://developer.joomla.org/schemas/json-schema/web_assets.json",
+	"name": "com_dharmaform",
+	"version": "0.1.0",
+	"description": "Dharma Form: стиль и скрипт форм",
+	"license": "GPL-2.0-or-later",
+	"assets": [
+		{
+			"name": "com_dharmaform.form",
+			"type": "style",
+			"uri": "com_dharmaform/form.css",
+			"version": "auto"
+		},
+		{
+			"name": "com_dharmaform.form",
+			"type": "script",
+			"uri": "com_dharmaform/form.js",
+			"version": "auto",
+			"attributes": {
+				"defer": true
+			}
+		}
+	]
+}
