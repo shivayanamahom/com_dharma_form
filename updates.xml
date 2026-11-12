@@ -1,3 +1,18 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <updates>
+	<update>
+		<name>Dharma Form</name>
+		<description>Dharma Form — универсальные формы для Joomla 5.2+ и 6</description>
+		<element>pkg_dharmaform</element>
+		<type>package</type>
+		<version>0.1.0</version>
+		<infourl title="Dharma Form v0.1.0">https://github.com/shivayanamahom/com_dharma_form/releases/tag/v0.1.0</infourl>
+		<downloads>
+			<downloadurl type="full" format="zip">https://github.com/shivayanamahom/com_dharma_form/releases/download/v0.1.0/pkg_dharma_form-0.1.0.zip</downloadurl>
+		</downloads>
+		<sha256>eba83ed30c8753c475b14de722bc474e460e4ecfff9826965c4fb3d8be30b9a9</sha256>
+		<maintainer>Dharma Design</maintainer>
+		<maintainerurl>https://github.com/shivayanamahom</maintainerurl>
+		<targetplatform name="joomla" version="((5\.([2-9]|\d{2,})|[6-9])\..*)" />
+	</update>
 </updates>

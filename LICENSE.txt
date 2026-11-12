@@ -1,4 +1,4 @@
-Dharma Clinic
+Dharma Form
 Copyright (C) 2026 Dharma. Все права защищены / All rights reserved.
 
 Это свободное программное обеспечение: вы можете распространять и изменять его

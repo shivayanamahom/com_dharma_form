@@ -81,4 +81,10 @@ jobs:
             git commit -m "Publish Joomla update metadata for $tag"
             git push origin HEAD:main
           fi
-          gh release create "$tag" "$package" --title "Dharma Form $version" --generate-notes
+          cp "$package" dist/pkg_dharma_form.zip
+          notes="docs/releases/$tag.md"
+          if [ -f "$notes" ]; then
+            gh release create "$tag" "$package" dist/pkg_dharma_form.zip --title "Dharma Form $version" --notes-file "$notes"
+          else
+            gh release create "$tag" "$package" dist/pkg_dharma_form.zip --title "Dharma Form $version" --generate-notes
+          fi
