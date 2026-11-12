@@ -99,6 +99,12 @@ class SubmissionsModel extends ListModel
         return $query;
     }
 
+    /** База данных для экспорта (метод родителя защищённый, а выгрузку строит контроллер). */
+    public function getExportDatabase(): \Joomla\Database\DatabaseInterface
+    {
+        return $this->getDatabase();
+    }
+
     /** Запрос текущей выборки без постраничности — для выгрузки в CSV. */
     public function getExportQuery()
     {

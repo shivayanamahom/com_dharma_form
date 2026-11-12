@@ -27,6 +27,8 @@ class HtmlView extends BaseHtmlView
 
     protected $params;
 
+    protected string $ctx = '';
+
     public function display($tpl = null): void
     {
         $app  = Factory::getApplication();
@@ -44,6 +46,7 @@ class HtmlView extends BaseHtmlView
         }
 
         $this->form = $form;
+        $this->ctx  = $app->getInput()->getString('ctx', '');
 
         $document = $this->getDocument();
 

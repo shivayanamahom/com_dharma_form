@@ -19,7 +19,7 @@ use Joomla\CMS\Language\Text;
 /** Причины, по которым защита форм набрала баллы: коды из `spam_reason` в понятные подписи. */
 final class SpamReasons
 {
-    public const CODES = ['honeypot', 'stamp', 'replay', 'too_fast', 'pow', 'behavior', 'links', 'stopwords', 'script', 'gibberish', 'disposable', 'mx', 'flood', 'blacklist'];
+    public const CODES = ['honeypot', 'stamp', 'replay', 'too_fast', 'pow', 'behavior', 'links', 'stopwords', 'script', 'gibberish', 'disposable', 'mx', 'flood', 'blacklist', 'rate'];
 
     /** @return array<string, string> код => подпись (неизвестный код остаётся как есть) */
     public static function labels(string $csv): array

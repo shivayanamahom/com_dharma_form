@@ -35,6 +35,8 @@ class HtmlView extends BaseHtmlView
 
     public function display($tpl = null): void
     {
+        \Dharma\Component\DharmaForm\Administrator\Service\SiteUrl::remember();
+
         $model = $this->getModel();
         $model->setUseExceptions(true);
 

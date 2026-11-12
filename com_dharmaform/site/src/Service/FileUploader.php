@@ -26,31 +26,74 @@ use Joomla\CMS\Language\Text;
 final class FileUploader
 {
     /** Расширения, которые не принимаются никогда, даже если их указали в поле. */
-    private const BLOCKED = ['php', 'php3', 'php4', 'php5', 'php7', 'php8', 'phtml', 'phar', 'pht', 'pl', 'py', 'cgi', 'sh', 'bash', 'exe', 'bat', 'cmd', 'com', 'msi', 'dll', 'js', 'mjs', 'html', 'htm', 'xhtml', 'shtml', 'svg', 'htaccess', 'htpasswd', 'ini', 'jar', 'vbs', 'ps1'];
+    public const BLOCKED = [
+        'php', 'php2', 'php3', 'php4', 'php5', 'php6', 'php7', 'php8', 'phps', 'phtml', 'phar', 'pht', 'pgif', 'inc', 'module',
+        'asp', 'aspx', 'ashx', 'asmx', 'asa', 'cer', 'cdx', 'shtm', 'xht', 'svgz', 'cfg', 'phtm', 'jsp', 'jspx', 'cfm', 'pl', 'py', 'rb', 'cgi', 'sh', 'bash', 'zsh', 'exe', 'bat', 'cmd', 'com', 'scr', 'msi', 'dll',
+        'js', 'mjs', 'html', 'htm', 'xhtml', 'shtml', 'xml', 'svg', 'swf', 'hta', 'htaccess', 'htpasswd', 'user', 'ini', 'jar', 'war', 'vbs', 'vbe', 'wsf', 'ps1', 'lnk', 'url', 'docm', 'xlsm', 'pptm', 'dotm',
+    ];
 
-    private const IMAGES = ['jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'gif' => 'image/gif', 'webp' => 'image/webp'];
+    /** Разрешённые типы по умолчанию (пока в настройках компонента ничего не сохранено). */
+    public const DEFAULT_ALLOWED = 'jpg, jpeg, png, gif, webp, pdf, docx, xlsx, pptx, odt, ods, txt, csv';
+
+    /** Начало содержимого, по которому тип файла подтверждается независимо от расширения (регулярные выражения для первых байт). */
+    private const SIGNATURES = [
+        'jpg'  => '~^\xFF\xD8\xFF~', 'jpeg' => '~^\xFF\xD8\xFF~', 'png' => '~^\x89PNG\r\n\x1A\n~', 'gif' => '~^GIF8[79]a~', 'webp' => '~^RIFF.{4}WEBP~s',
+        'pdf'  => '~^.{0,1024}%PDF-~s',
+        'docx' => '~^PK\x03\x04~', 'xlsx' => '~^PK\x03\x04~', 'pptx' => '~^PK\x03\x04~', 'odt' => '~^PK\x03\x04~', 'ods' => '~^PK\x03\x04~', 'odp' => '~^PK\x03\x04~', 'zip' => '~^PK\x03\x04~',
+        'doc'  => '~^\xD0\xCF\x11\xE0~', 'xls' => '~^\xD0\xCF\x11\xE0~', 'ppt' => '~^\xD0\xCF\x11\xE0~',
+        'rar'  => '~^Rar!\x1A\x07~', '7z' => '~^7z\xBC\xAF\x27\x1C~', 'rtf' => '~^\{\\rtf~',
+    ];
+
+    /** Расширение, под которым файл лежит на диске: никакого исполняемого или «умного» типа, поэтому сервер его не выполнит, даже если закрытие каталога не сработало. */
+    private const DISK_EXT = 'dat';
 
     private const STORED = '~^\d{4}/\d{2}/[a-f0-9]{32}\.[a-z0-9]{1,10}$~';
 
-    /** Каталог загрузок: из настроек компонента, путь от корня сайта или абсолютный. */
+    /** Каталоги движка Joomla: в них загрузки хранить нельзя. */
+    private const FORBIDDEN_DIRS = ['administrator', 'cache', 'components', 'includes', 'language', 'layouts', 'libraries', 'modules', 'plugins', 'templates', 'tmp', 'api', 'cli', 'installation', 'media'];
+
+    /**
+     * Каталог загрузок: из настроек компонента, путь от корня сайта или абсолютный. Корень сайта, каталоги движка Joomla
+     * (`administrator`, `libraries`, `plugins`, `media` и т. п.) и пути с `..` не принимаются: туда кладётся файл закрытия
+     * доступа, а загруженное не должно оказаться среди кода сайта. Вместо них берётся каталог по умолчанию.
+     */
     public static function baseDir(): string
     {
-        $dir = trim((string) ComponentHelper::getParams('com_dharmaform')->get('upload_dir', ''));
-        $dir = $dir !== '' ? $dir : 'media/com_dharmaform/uploads';
+        $default = str_replace('\\', '/', JPATH_ROOT) . '/files/dharmaform';
+        $dir     = trim((string) ComponentHelper::getParams('com_dharmaform')->get('upload_dir', ''));
+
+        if ($dir === '') {
+            return $default;
+        }
 
         if (!str_starts_with($dir, '/') && !preg_match('~^[A-Za-z]:[\\\\/]~', $dir)) {
             $dir = JPATH_ROOT . '/' . $dir;
         }
 
-        return rtrim(str_replace('\\', '/', $dir), '/');
+        $dir  = rtrim(str_replace('\\', '/', $dir), '/');
+        $root = rtrim(str_replace('\\', '/', JPATH_ROOT), '/');
+
+        if ($dir === '' || str_contains($dir, '..') || str_contains($dir, "\0") || $dir === $root || str_starts_with($root . '/', $dir . '/')) {
+            return $default;
+        }
+
+        if (str_starts_with($dir, $root . '/')) {
+            $first = explode('/', substr($dir, \strlen($root) + 1))[0];
+
+            if (\in_array(strtolower($first), self::FORBIDDEN_DIRS, true)) {
+                return $default;
+            }
+        }
+
+        return $dir;
     }
 
-    /** Расширения, разрешённые полем (`file_accept`): строчные буквы и цифры без точки, без запрещённых. @return string[] */
-    public static function allowed(string $accept): array
+    /** Расширения из списка: строчные буквы и цифры без точки, без всегда запрещённых. @return string[] */
+    private static function parse(string $list): array
     {
         $out = [];
 
-        foreach (preg_split('~[\s,;]+~', strtolower($accept), -1, PREG_SPLIT_NO_EMPTY) ?: [] as $ext) {
+        foreach (preg_split('~[\s,;]+~', strtolower($list), -1, PREG_SPLIT_NO_EMPTY) ?: [] as $ext) {
             $ext = ltrim($ext, '.');
 
             if (preg_match('~^[a-z0-9]{1,10}$~', $ext) && !\in_array($ext, self::BLOCKED, true)) {
@@ -59,6 +102,23 @@ final class FileUploader
         }
 
         return array_values($out);
+    }
+
+    /** Типы, разрешённые настройками компонента для всех форм. @return string[] */
+    public static function globalAllowed(): array
+    {
+        $list = trim((string) ComponentHelper::getParams('com_dharmaform')->get('upload_allowed', ''));
+
+        return self::parse($list !== '' ? $list : self::DEFAULT_ALLOWED);
+    }
+
+    /** Типы поля (`file_accept`) в пределах разрешённых в настройках; пустой список поля — всё разрешённое в настройках. @return string[] */
+    public static function allowed(string $accept): array
+    {
+        $global = self::globalAllowed();
+        $field  = self::parse($accept);
+
+        return $field ? array_values(array_intersect($field, $global)) : $global;
     }
 
     /**
@@ -100,7 +160,7 @@ final class FileUploader
                 return $err('COM_DHARMAFORM_FORM_ERROR_FILE_TYPE', implode(', ', $allowed));
             }
 
-            $size = (int) $file['size'];
+            $size = (int) @filesize((string) $file['tmp_name']);
 
             if ($size < 1 || $size > $limit) {
                 return $err('COM_DHARMAFORM_FORM_ERROR_FILE_SIZE', max(1, (int) $field['file_max_mb']));
@@ -108,7 +168,7 @@ final class FileUploader
 
             $mime = self::mime((string) $file['tmp_name']);
 
-            if (!self::contentOk((string) $file['tmp_name'], $ext, $mime)) {
+            if (!self::contentOk((string) $file['tmp_name'], $ext)) {
                 return $err('COM_DHARMAFORM_FORM_ERROR_FILE_TYPE', implode(', ', $allowed));
             }
 
@@ -144,7 +204,7 @@ final class FileUploader
         $out = [];
 
         foreach ($items as $item) {
-            $stored = $sub . '/' . bin2hex(random_bytes(16)) . '.' . $item['ext'];
+            $stored = $sub . '/' . bin2hex(random_bytes(16)) . '.' . self::DISK_EXT;
 
             if (!@move_uploaded_file((string) $item['tmp'], $base . '/' . $stored)) {
                 continue;
@@ -214,7 +274,7 @@ final class FileUploader
     private static function cleanName(string $name): string
     {
         $name = basename(str_replace('\\', '/', strip_tags($name)));
-        $name = trim((string) preg_replace('~[\x00-\x1F\x7F<>:"|?*]+~u', '', $name));
+        $name = trim((string) preg_replace('~[\x00-\x1F\x7F<>:"|?*\p{Cf}\p{Zl}\p{Zp}]+~u', '', $name), " .\t");
 
         if (mb_strlen($name) > 100) {
             $ext  = (string) pathinfo($name, PATHINFO_EXTENSION);
@@ -236,20 +296,23 @@ final class FileUploader
         return $mime;
     }
 
-    /** Содержимое соответствует расширению: картинки и PDF — по типу, остальное — без кода PHP и HTML в начале файла. */
-    private static function contentOk(string $file, string $ext, string $mime): bool
+    /**
+     * Содержимое подтверждает тип: начало файла (подпись) должно соответствовать расширению, а у текстовых и неизвестных
+     * типов в начале не должно быть кода PHP и HTML. Не зависит от расширения `fileinfo` на сервере.
+     */
+    private static function contentOk(string $file, string $ext): bool
     {
-        if (isset(self::IMAGES[$ext])) {
-            return $mime === '' || str_starts_with($mime, 'image/');
-        }
-
-        if ($ext === 'pdf') {
-            return $mime === '' || $mime === 'application/pdf';
-        }
-
         $head = (string) @file_get_contents($file, false, null, 0, 4096);
 
-        return !preg_match('~<\?(?:php|=)|<script\b|<html\b|<!doctype html~i', $head);
+        if ($head === '') {
+            return false;
+        }
+
+        if (isset(self::SIGNATURES[$ext])) {
+            return (bool) preg_match(self::SIGNATURES[$ext], $head);
+        }
+
+        return !preg_match('~<\?(?:php|=)|<script\b|<html\b|<!doctype html|<svg\b~i', $head);
     }
 
     /** Закрыть каталог загрузок от прямого доступа (Apache, IIS) и от показа списка файлов. */

@@ -34,6 +34,14 @@ return new class () implements InstallerScriptInterface {
 
     public function uninstall(InstallerAdapter $adapter): bool
     {
+        // Таблицы заявок удаляются вместе с компонентом, а загруженные файлы остаются на диске: предупреждаем, где они лежат.
+        $params = new \Joomla\Registry\Registry((string) Factory::getContainer()->get(DatabaseInterface::class)->setQuery(
+            "SELECT params FROM #__extensions WHERE element = 'com_dharmaform' AND type = 'component'"
+        )->loadResult());
+        $dir    = trim((string) $params->get('upload_dir', '')) ?: 'files/dharmaform';
+
+        Factory::getApplication()->enqueueMessage('Dharma Form: загруженные посетителями файлы остались в папке «' . htmlspecialchars($dir, ENT_QUOTES, 'UTF-8') . '». В них могут быть персональные данные: удалите папку вручную, если файлы больше не нужны.', 'warning');
+
         return true;
     }
 
@@ -60,7 +68,7 @@ return new class () implements InstallerScriptInterface {
         $db->setQuery(
             'UPDATE ' . $db->quoteName('#__extensions') . ' SET enabled = 1 WHERE type = ' . $db->quote('plugin')
             . ' AND ((folder = ' . $db->quote('dharmaformnotify') . ') OR (folder = ' . $db->quote('system') . ' AND element = ' . $db->quote('dharmaform') . ')'
-            . ' OR (folder = ' . $db->quote('task') . ' AND element = ' . $db->quote('dharmaform') . '))'
+            . ' OR (folder = ' . $db->quote('task') . ' AND element = ' . $db->quote('dharmaform') . ') OR (folder = ' . $db->quote('dharmashop') . ' AND element = ' . $db->quote('dharmaform') . '))'
         )->execute();
 
         return true;

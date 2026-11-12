@@ -70,6 +70,11 @@ $state = [0 => 'COM_DHARMAFORM_DELIVERY_PENDING', 1 => 'COM_DHARMAFORM_DELIVERY_
                         <?php if ($item->page_url !== '') : ?>
                             <tr><th scope="row"><?php echo Text::_('COM_DHARMAFORM_CSV_PAGE'); ?></th><td><?php echo $esc($item->page_url); ?></td></tr>
                         <?php endif; ?>
+                        <?php foreach ($item->meta as $key => $value) : ?>
+                            <?php if (\is_scalar($value) && (string) $value !== '') : ?>
+                                <tr><th scope="row"><?php echo Text::_('COM_DHARMAFORM_META_' . strtoupper((string) $key)); ?></th><td><?php echo $esc($key === 'device' ? Text::_('COM_DHARMAFORM_META_DEVICE_' . strtoupper((string) $value)) : $value); ?></td></tr>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
                         <?php foreach ($item->utm as $key => $value) : ?>
                             <?php if (\is_scalar($value)) : ?>
                                 <tr><th scope="row"><?php echo $esc($key); ?></th><td><?php echo $esc($value); ?></td></tr>

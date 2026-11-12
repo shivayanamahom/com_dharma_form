@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Dharma\Component\DharmaForm\Administrator\Notification;
 
 use Dharma\Component\DharmaForm\Administrator\Forms\FormConfig;
+use Dharma\Component\DharmaForm\Administrator\Service\SiteUrl;
 use Dharma\Component\DharmaForm\Site\Service\FileUploader;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
@@ -22,6 +23,7 @@ use Joomla\CMS\Uri\Uri;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
 use Joomla\Event\Event;
+use Joomla\Event\EventInterface;
 
 \defined('_JEXEC') or die;
 
@@ -84,6 +86,53 @@ final class SubmissionNotificationService
             // Без контактов и текста заявки в журнале.
             Log::add('Submission notification ' . $submissionId . ': ' . $error::class, Log::ERROR, 'com_dharmaform');
         }
+    }
+
+
+    /** Плагин канала сообщает итог пробной отправки: ключ — получатель (`канал:получатель`) или сам канал, значение — `ok` или код ошибки. */
+    public static function report(EventInterface $event, string $key, string $value): void
+    {
+        $results       = (array) $event->getArgument('results', []);
+        $results[$key] = $value;
+        $event->setArgument('results', $results);
+    }
+
+    /**
+     * Пробное уведомление по одному каналу по сохранённым настройкам: без заявки, без записи в журнал доставок.
+     *
+     * @return array<string, string> получатель => `ok` или код ошибки
+     */
+    public function test(string $channel): array
+    {
+        $settings     = clone ComponentHelper::getParams('com_dharmaform');
+        $notification = new SubmissionNotification(
+            0,
+            [
+                'id' => 0, 'name' => 'Проверка', 'phone' => '', 'email' => '',
+                'message' => 'Это пробное уведомление: если вы его видите, канал настроен верно.',
+                'page_url' => SiteUrl::base(), 'created' => Factory::getDate()->toSql(), 'is_spam' => 0,
+            ],
+            [],
+            [],
+            ['title' => 'Проверка уведомлений', 'code' => 'test', 'params' => FormConfig::DEFAULTS],
+            [],
+            SiteUrl::base() . '/administrator/index.php?option=com_dharmaform&view=forms'
+        );
+
+        PluginHelper::importPlugin('dharmaformnotify');
+
+        $event = new Event('onDharmaFormNotify', [
+            'notification' => $notification,
+            'settings'     => $settings,
+            'retry'        => false,
+            'test'         => true,
+            'only'         => $channel,
+            'results'      => [],
+        ]);
+
+        Factory::getApplication()->getDispatcher()->dispatch('onDharmaFormNotify', $event);
+
+        return (array) $event->getArgument('results', []);
     }
 
     /** Заявки, у которых есть неотправленное или оборванное уведомление: повтор (задание планировщика). @return int сколько заявок обработано */
@@ -186,6 +235,7 @@ final class SubmissionNotificationService
         $formParams = $decode($row->form_params);
         $fields     = $decode($row->fields);
         $utm        = $decode($row->utm);
+        $meta       = (int) ComponentHelper::getParams('com_dharmaform')->get('notify_meta', 1) ? $decode($row->meta) : [];
         $files      = [];
 
         foreach ($decode($row->files) as $file) {
@@ -201,13 +251,13 @@ final class SubmissionNotificationService
             [
                 'id' => $submissionId, 'name' => (string) $row->name, 'phone' => (string) $row->phone, 'email' => (string) $row->email,
                 'message' => (string) $row->message, 'page_url' => (string) $row->page_url, 'created' => (string) $row->created,
-                'is_spam' => (int) $row->is_spam,
+                'is_spam' => (int) $row->is_spam, 'meta' => $meta,
             ],
             array_map('strval', array_filter($fields, 'is_scalar')),
             $files,
             ['title' => (string) ($row->form_title ?? ''), 'code' => (string) ($row->form_code ?? ''), 'params' => array_merge(FormConfig::DEFAULTS, $formParams)],
             array_map('strval', array_filter($utm, 'is_scalar')),
-            rtrim(Uri::root(), '/') . '/administrator/index.php?option=com_dharmaform&task=submission.edit&id=' . $submissionId
+            SiteUrl::base() . '/administrator/index.php?option=com_dharmaform&task=submission.edit&id=' . $submissionId
         );
     }
 }

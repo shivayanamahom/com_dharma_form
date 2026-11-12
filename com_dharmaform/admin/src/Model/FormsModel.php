@@ -42,7 +42,7 @@ class FormsModel extends ListModel
     {
         $db    = $this->getDatabase();
         $query = $db->createQuery()
-            ->select($db->quoteName(['a.id', 'a.code', 'a.title', 'a.state', 'a.ordering', 'a.created']))
+            ->select($db->quoteName(['a.id', 'a.code', 'a.title', 'a.state', 'a.ordering', 'a.created', 'a.params']))
             ->select('(SELECT COUNT(*) FROM ' . $db->quoteName('#__dharmaform_submissions', 's') . ' WHERE s.form_id = a.id) AS ' . $db->quoteName('submissions'))
             ->from($db->quoteName('#__dharmaform_forms', 'a'));
 

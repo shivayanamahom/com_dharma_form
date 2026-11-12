@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS `#__dharmaform_submissions` (
   `files` mediumtext,
   `page_url` varchar(500) NOT NULL DEFAULT '',
   `utm` text,
+  `meta` text,
   `ip_hash` char(64) NOT NULL DEFAULT '',
   `consent_at` datetime DEFAULT NULL,
   `is_spam` tinyint NOT NULL DEFAULT 0,
@@ -59,4 +60,11 @@ CREATE TABLE IF NOT EXISTS `#__dharmaform_deliveries` (
   UNIQUE KEY `idx_unique` (`submission_id`, `channel`, `recipient_hash`),
   KEY `idx_retry` (`state`, `next_try`),
   KEY `idx_claim` (`claim_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 DEFAULT COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `#__dharmaform_nonces` (
+  `nonce` char(12) NOT NULL,
+  `created` datetime NOT NULL,
+  PRIMARY KEY (`nonce`),
+  KEY `idx_created` (`created`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 DEFAULT COLLATE=utf8mb4_unicode_ci;

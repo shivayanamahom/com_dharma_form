@@ -13,8 +13,11 @@ declare(strict_types=1);
 namespace Dharma\Component\DharmaForm\Site\Helper;
 
 use Dharma\Component\DharmaForm\Site\Service\FormService;
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Document\HtmlDocument;
 use Joomla\CMS\Factory;
+use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Uri\Uri;
 
@@ -48,36 +51,63 @@ final class FormAssets
         return '/' . trim(substr($path, \strlen($base)), '/');
     }
 
-    public static function enable(): void
+    private static bool $full = false;
+
+    /** Нужно ли обновлять токен и метку у форм на странице (страница может лежать в кэше). Настройка `inline_refresh`: auto — только если включён кэш Joomla. */
+    public static function refreshInline(): bool
     {
-        if (self::$enabled) {
-            return;
+        $mode = (string) ComponentHelper::getParams('com_dharmaform')->get('inline_refresh', 'auto');
+
+        if ($mode === 'always' || $mode === 'never') {
+            return $mode === 'always';
         }
 
+        return (int) Factory::getApplication()->get('caching', 0) > 0 || PluginHelper::isEnabled('system', 'cache');
+    }
+
+    /**
+     * Подключение скриптов. Без `$inline` — лёгкий загрузчик (кнопки, автопоказ): его тяжёлая часть и стили подгружаются, когда
+     * форма действительно нужна. С `$inline` (форма выведена на странице) тяжёлая часть и стили идут в страницу сразу.
+     */
+    public static function enable(bool $inline = false): void
+    {
         $document = Factory::getApplication()->getDocument();
 
         if (!$document instanceof HtmlDocument) {
             return;
         }
 
-        self::$enabled = true;
-
         $wa = $document->getWebAssetManager();
-        $wa->getRegistry()->addExtensionRegistryFile('com_dharmaform');
-        $wa->useStyle('com_dharmaform.form')->useScript('com_dharmaform.form');
 
-        $strings = [];
+        if (!self::$enabled) {
+            self::$enabled = true;
+            $wa->getRegistry()->addExtensionRegistryFile('com_dharmaform');
+            $wa->useScript('com_dharmaform.form');
 
-        foreach (self::STRINGS as $key => [$constant, $fallback]) {
-            $strings[$key] = FormMarkup::text($constant, $fallback);
+            $strings = [];
+
+            foreach (self::STRINGS as $key => [$constant, $fallback]) {
+                $strings[$key] = FormMarkup::text($constant, $fallback);
+            }
+
+            $service = new FormService();
+            $media   = ['version' => 'auto', 'relative' => true, 'pathOnly' => true];
+            $document->addScriptOptions('com_dharmaform.form', [
+                'render'   => Route::_('index.php?option=com_dharmaform&task=form.render&format=json', false),
+                'ui'       => (string) HTMLHelper::_('script', 'com_dharmaform/form-ui.js', $media),
+                'css'      => (string) HTMLHelper::_('stylesheet', 'com_dharmaform/form.css', $media),
+                'triggers' => (object) $service->triggers(),
+                'auto'     => (object) $service->autoPopups(self::currentPath()),
+                'contexts' => (object) $service->contexts(),
+                'dev'      => (bool) (int) ComponentHelper::getParams('com_dharmaform')->get('dev_mode', 0),
+                'strings'  => $strings,
+            ]);
         }
 
-        $service = new FormService();
-        $document->addScriptOptions('com_dharmaform.form', [
-            'render'   => Route::_('index.php?option=com_dharmaform&task=form.render&format=json', false),
-            'triggers' => (object) $service->triggers(),
-            'auto'     => (object) $service->autoPopups(self::currentPath()),
-            'strings'  => $strings,
-        ]);
+        if ($inline && !self::$full) {
+            self::$full = true;
+            $wa->useStyle('com_dharmaform.form')->useScript('com_dharmaform.form-ui');
+            $document->addScriptOptions('com_dharmaform.form', ['css' => '']);
+        }
     }
 }

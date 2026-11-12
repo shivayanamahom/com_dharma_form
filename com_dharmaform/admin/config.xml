@@ -2,7 +2,45 @@
 <config>
 	<fieldset name="general" label="COM_DHARMAFORM_CONFIG_GENERAL" addfieldprefix="Dharma\Component\DharmaForm\Administrator\Field">
 		<field name="privacy_url" type="text" label="COM_DHARMAFORM_SETTING_PRIVACY_URL_LABEL" description="COM_DHARMAFORM_SETTING_PRIVACY_URL_DESC" hint="/politika" maxlength="500" filter="string" />
-		<field name="upload_dir" type="text" label="COM_DHARMAFORM_SETTING_UPLOAD_DIR_LABEL" description="COM_DHARMAFORM_SETTING_UPLOAD_DIR_DESC" default="media/com_dharmaform/uploads" maxlength="255" filter="string" />
+		<field name="site_url" type="url" label="COM_DHARMAFORM_SETTING_SITE_URL_LABEL" description="COM_DHARMAFORM_SETTING_SITE_URL_DESC" hint="https://example.com" filter="url" maxlength="200" />
+		<field name="inline_refresh" type="list" label="COM_DHARMAFORM_SETTING_INLINE_REFRESH_LABEL" description="COM_DHARMAFORM_SETTING_INLINE_REFRESH_DESC" default="auto" validate="options">
+			<option value="auto">COM_DHARMAFORM_SETTING_INLINE_REFRESH_AUTO</option>
+			<option value="always">COM_DHARMAFORM_SETTING_INLINE_REFRESH_ALWAYS</option>
+			<option value="never">COM_DHARMAFORM_SETTING_INLINE_REFRESH_NEVER</option>
+		</field>
+		<field name="dev_mode" type="radio" label="COM_DHARMAFORM_SETTING_DEV_MODE_LABEL" description="COM_DHARMAFORM_SETTING_DEV_MODE_DESC" layout="joomla.form.field.radio.switcher" default="0" filter="integer">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="upload_dir" type="text" label="COM_DHARMAFORM_SETTING_UPLOAD_DIR_LABEL" description="COM_DHARMAFORM_SETTING_UPLOAD_DIR_DESC" default="files/dharmaform" maxlength="255" filter="string" />
+		<field name="upload_allowed" type="textarea" label="COM_DHARMAFORM_SETTING_UPLOAD_ALLOWED_LABEL" description="COM_DHARMAFORM_SETTING_UPLOAD_ALLOWED_DESC" default="jpg, jpeg, png, gif, webp, pdf, docx, xlsx, pptx, odt, ods, txt, csv" rows="3" filter="string" />
+		<field name="retention_days" type="number" label="COM_DHARMAFORM_SETTING_RETENTION_DAYS_LABEL" description="COM_DHARMAFORM_SETTING_RETENTION_DAYS_DESC" default="365" min="0" max="3650" filter="integer" />
+		<field name="retention_spam_days" type="number" label="COM_DHARMAFORM_SETTING_RETENTION_SPAM_LABEL" description="COM_DHARMAFORM_SETTING_RETENTION_SPAM_DESC" default="30" min="0" max="3650" filter="integer" />
+		<field name="collect_note" type="note" label="COM_DHARMAFORM_SETTING_COLLECT_TITLE" description="COM_DHARMAFORM_SETTING_COLLECT_NOTE" class="alert alert-info" />
+		<field name="collect_ip" type="radio" label="COM_DHARMAFORM_SETTING_COLLECT_IP_LABEL" description="COM_DHARMAFORM_SETTING_COLLECT_IP_DESC" layout="joomla.form.field.radio.switcher" default="0" filter="integer">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="collect_browser" type="radio" label="COM_DHARMAFORM_SETTING_COLLECT_BROWSER_LABEL" description="COM_DHARMAFORM_SETTING_COLLECT_BROWSER_DESC" layout="joomla.form.field.radio.switcher" default="0" filter="integer">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="collect_lang" type="radio" label="COM_DHARMAFORM_SETTING_COLLECT_LANG_LABEL" description="COM_DHARMAFORM_SETTING_COLLECT_LANG_DESC" layout="joomla.form.field.radio.switcher" default="0" filter="integer">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="collect_referrer" type="radio" label="COM_DHARMAFORM_SETTING_COLLECT_REF_LABEL" description="COM_DHARMAFORM_SETTING_COLLECT_REF_DESC" layout="joomla.form.field.radio.switcher" default="0" filter="integer">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="collect_screen" type="radio" label="COM_DHARMAFORM_SETTING_COLLECT_SCREEN_LABEL" description="COM_DHARMAFORM_SETTING_COLLECT_SCREEN_DESC" layout="joomla.form.field.radio.switcher" default="0" filter="integer">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="notify_meta" type="radio" label="COM_DHARMAFORM_SETTING_NOTIFY_META_LABEL" description="COM_DHARMAFORM_SETTING_NOTIFY_META_DESC" layout="joomla.form.field.radio.switcher" default="1" filter="integer" showon="collect_ip:1[OR]collect_browser:1[OR]collect_lang:1[OR]collect_referrer:1[OR]collect_screen:1">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
 	</fieldset>
 	<fieldset name="notify" label="COM_DHARMAFORM_CONFIG_NOTIFY" description="COM_DHARMAFORM_CONFIG_NOTIFY_DESC" addfieldprefix="Dharma\Component\DharmaForm\Administrator\Field">
 		<field name="notify_new" type="radio" label="COM_DHARMAFORM_SETTING_NOTIFY_NEW_LABEL" description="COM_DHARMAFORM_SETTING_NOTIFY_NEW_DESC" layout="joomla.form.field.radio.switcher" default="1" filter="integer">
@@ -20,6 +58,7 @@
 			<option value="1">JYES</option>
 		</field>
 		<field name="notify_email_to" type="textarea" label="COM_DHARMAFORM_SETTING_NOTIFY_EMAIL_TO_LABEL" description="COM_DHARMAFORM_SETTING_NOTIFY_EMAIL_TO_DESC" filter="string" rows="3" hint="info@example.com, manager@example.com" showon="notify_email_enabled:1" />
+		<field name="notify_email_test" type="notifytest" channel="email" label="COM_DHARMAFORM_TEST_LABEL" description="COM_DHARMAFORM_TEST_DESC" filter="unset" showon="notify_email_enabled:1" />
 		<field name="notify_email_system" type="radio" label="COM_DHARMAFORM_SETTING_NOTIFY_EMAIL_SYSTEM_LABEL" description="COM_DHARMAFORM_SETTING_NOTIFY_EMAIL_SYSTEM_DESC" layout="joomla.form.field.radio.switcher" default="0" filter="integer" showon="notify_email_enabled:1">
 			<option value="0">JNO</option>
 			<option value="1">JYES</option>
@@ -41,7 +80,8 @@
 			<option value="1">JYES</option>
 		</field>
 		<field name="notify_telegram_token" type="password" label="COM_DHARMAFORM_SETTING_NOTIFY_TELEGRAM_TOKEN_LABEL" description="COM_DHARMAFORM_SETTING_NOTIFY_TELEGRAM_TOKEN_DESC" filter="string" autocomplete="off" maxlength="100" showon="notify_telegram_enabled:1" />
-		<field name="notify_telegram_chats" type="telegramchats" label="COM_DHARMAFORM_SETTING_NOTIFY_TELEGRAM_CHATS_LABEL" description="COM_DHARMAFORM_SETTING_NOTIFY_TELEGRAM_CHATS_DESC" multiple="true" layout="joomla.form.field.list-fancy-select" allowCustom="true" showon="notify_telegram_enabled:1" />
+		<field name="notify_telegram_chats" type="telegramchats" label="COM_DHARMAFORM_SETTING_NOTIFY_TELEGRAM_CHATS_LABEL" description="COM_DHARMAFORM_SETTING_NOTIFY_TELEGRAM_CHATS_DESC" multiple="true" layout="joomla.form.field.list-fancy-select" allowCustom="true" hint="COM_DHARMAFORM_CHATS_HINT" showon="notify_telegram_enabled:1" />
+		<field name="notify_telegram_test" type="notifytest" channel="telegram" label="COM_DHARMAFORM_TEST_LABEL" description="COM_DHARMAFORM_TEST_DESC" filter="unset" showon="notify_telegram_enabled:1" />
 		<field name="notify_telegram_details" type="radio" label="COM_DHARMAFORM_SETTING_NOTIFY_TELEGRAM_DETAILS_LABEL" description="COM_DHARMAFORM_SETTING_NOTIFY_TELEGRAM_DETAILS_DESC" layout="joomla.form.field.radio.switcher" default="1" filter="integer" showon="notify_telegram_enabled:1">
 			<option value="0">JNO</option>
 			<option value="1">JYES</option>
@@ -53,7 +93,8 @@
 			<option value="1">JYES</option>
 		</field>
 		<field name="notify_max_token" type="password" label="COM_DHARMAFORM_SETTING_NOTIFY_MAX_TOKEN_LABEL" description="COM_DHARMAFORM_SETTING_NOTIFY_MAX_TOKEN_DESC" autocomplete="off" maxlength="300" filter="string" showon="notify_max_enabled:1" />
-		<field name="notify_max_chats" type="maxchats" label="COM_DHARMAFORM_SETTING_NOTIFY_MAX_CHATS_LABEL" description="COM_DHARMAFORM_SETTING_NOTIFY_MAX_CHATS_DESC" multiple="true" layout="joomla.form.field.list-fancy-select" allowCustom="true" showon="notify_max_enabled:1" />
+		<field name="notify_max_chats" type="maxchats" label="COM_DHARMAFORM_SETTING_NOTIFY_MAX_CHATS_LABEL" description="COM_DHARMAFORM_SETTING_NOTIFY_MAX_CHATS_DESC" multiple="true" layout="joomla.form.field.list-fancy-select" allowCustom="true" hint="COM_DHARMAFORM_CHATS_HINT" showon="notify_max_enabled:1" />
+		<field name="notify_max_test" type="notifytest" channel="max" label="COM_DHARMAFORM_TEST_LABEL" description="COM_DHARMAFORM_TEST_DESC" filter="unset" showon="notify_max_enabled:1" />
 		<field name="notify_max_details" type="radio" label="COM_DHARMAFORM_SETTING_NOTIFY_MAX_DETAILS_LABEL" description="COM_DHARMAFORM_SETTING_NOTIFY_MAX_DETAILS_DESC" layout="joomla.form.field.radio.switcher" default="1" filter="integer" showon="notify_max_enabled:1">
 			<option value="0">JNO</option>
 			<option value="1">JYES</option>
@@ -61,6 +102,12 @@
 		<field name="notify_max_ca" type="text" label="COM_DHARMAFORM_SETTING_NOTIFY_MAX_CA_LABEL" description="COM_DHARMAFORM_SETTING_NOTIFY_MAX_CA_DESC" hint="/etc/ssl/certs/russian_trusted_root_ca.pem" maxlength="300" filter="string" showon="notify_max_enabled:1" />
 	</fieldset>
 	<fieldset name="spam" label="COM_DHARMAFORM_CONFIG_SPAM" description="COM_DHARMAFORM_CONFIG_SPAM_DESC">
+		<field name="ip_source" type="list" label="COM_DHARMAFORM_SETTING_IP_SOURCE_LABEL" description="COM_DHARMAFORM_SETTING_IP_SOURCE_DESC" default="remote_addr" validate="options">
+			<option value="remote_addr">COM_DHARMAFORM_SETTING_IP_SOURCE_REMOTE</option>
+			<option value="cloudflare">COM_DHARMAFORM_SETTING_IP_SOURCE_CF</option>
+			<option value="real_ip">COM_DHARMAFORM_SETTING_IP_SOURCE_REAL</option>
+			<option value="forwarded_for">COM_DHARMAFORM_SETTING_IP_SOURCE_XFF</option>
+		</field>
 		<field name="spam_ip_whitelist" type="textarea" label="COM_DHARMAFORM_SETTING_SPAM_IP_WHITELIST_LABEL" description="COM_DHARMAFORM_SETTING_SPAM_IP_WHITELIST_DESC" rows="4" hint="203.0.113.7&#10;198.51.100.0/24" filter="string" />
 		<field name="spam_ip_blacklist" type="textarea" label="COM_DHARMAFORM_SETTING_SPAM_IP_BLACKLIST_LABEL" description="COM_DHARMAFORM_SETTING_SPAM_IP_BLACKLIST_DESC" rows="4" hint="192.0.2.15&#10;2001:db8::/32" filter="string" />
 		<field name="spam_stopwords" type="textarea" label="COM_DHARMAFORM_SETTING_SPAM_STOPWORDS_LABEL" description="COM_DHARMAFORM_SETTING_SPAM_STOPWORDS_DESC" rows="4" filter="string" />

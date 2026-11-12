@@ -70,7 +70,7 @@ final class FormSanitizer
         }
 
         $host = strtolower(preg_replace('/^www\./i', '', $m[1]) ?? '');
-        $own  = strtolower(preg_replace('/^www\./i', '', \Joomla\CMS\Uri\Uri::getInstance()->getHost()) ?? '');
+        $own  = \Dharma\Component\DharmaForm\Administrator\Service\SiteUrl::host();
 
         return $host !== '' && $host === $own ? $url : '';
     }

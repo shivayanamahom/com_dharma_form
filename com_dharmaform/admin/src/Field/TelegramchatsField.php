@@ -15,7 +15,8 @@ namespace Dharma\Component\DharmaForm\Administrator\Field;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
-use Joomla\CMS\Http\HttpFactory;
+use Dharma\Component\DharmaForm\Administrator\Service\Http;
+use Joomla\CMS\Language\Text;
 
 \defined('_JEXEC') or die;
 
@@ -30,6 +31,16 @@ class TelegramchatsField extends ListField
 
     /** @var array<string, array<string, string>> */
     private static array $cache = [];
+
+    /** Почему список пуст: короткое пояснение под полем (без токена и ответа Telegram). */
+    private static string $note = '';
+
+    protected function getInput(): string
+    {
+        $note = self::$note !== '' ? '<div class="form-text text-warning">' . htmlspecialchars(self::$note, ENT_QUOTES, 'UTF-8') . '</div>' : '';
+
+        return parent::getInput() . $note;
+    }
 
     protected function getOptions(): array
     {
@@ -71,8 +82,14 @@ class TelegramchatsField extends ListField
         $chats = [];
 
         try {
-            $response = HttpFactory::getHttp(['timeout' => 4])->get('https://api.telegram.org/bot' . $token . '/getUpdates?limit=100', ['Accept' => 'application/json'], 4);
+            $response = Http::get('https://api.telegram.org/bot' . $token . '/getUpdates?limit=100', ['Accept' => 'application/json'], 6);
             $payload  = json_decode((string) $response->body, true);
+
+            if ((int) $response->code !== 200 || !\is_array($payload) || empty($payload['ok'])) {
+                self::$note = Text::sprintf('COM_DHARMAFORM_CHATS_NOTE_API', (int) $response->code);
+            } elseif (empty($payload['result'])) {
+                self::$note = Text::_('COM_DHARMAFORM_CHATS_NOTE_EMPTY');
+            }
 
             if ((int) $response->code === 200 && \is_array($payload) && !empty($payload['ok'])) {
                 foreach ($payload['result'] ?? [] as $update) {
@@ -86,6 +103,7 @@ class TelegramchatsField extends ListField
             }
         } catch (\Throwable) {
             // Недоступный Telegram не должен мешать сохранению настроек.
+            self::$note = Text::_('COM_DHARMAFORM_CHATS_NOTE_NETWORK');
         }
 
         return self::$cache[$key] = $chats;
@@ -94,7 +112,7 @@ class TelegramchatsField extends ListField
     private static function title(string $token, string $chatId): ?string
     {
         try {
-            $response = HttpFactory::getHttp(['timeout' => 3])->get('https://api.telegram.org/bot' . $token . '/getChat?chat_id=' . rawurlencode($chatId), ['Accept' => 'application/json'], 3);
+            $response = Http::get('https://api.telegram.org/bot' . $token . '/getChat?chat_id=' . rawurlencode($chatId), ['Accept' => 'application/json'], 5);
             $payload  = json_decode((string) $response->body, true);
 
             return (int) $response->code === 200 && !empty($payload['ok']) && \is_array($payload['result'] ?? null) ? self::format($payload['result'], $chatId) : null;

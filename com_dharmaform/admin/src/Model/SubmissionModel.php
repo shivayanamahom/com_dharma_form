@@ -57,6 +57,7 @@ class SubmissionModel extends AdminModel
         $item->fields  = $decode($item->fields);
         $item->files   = array_values(array_filter($decode($item->files), 'is_array'));
         $item->utm     = $decode($item->utm);
+        $item->meta    = $decode($item->meta ?? '');
         $item->deliveries = SubmissionNotificationService::fromContainer()->deliveries($pk);
 
         return $item;

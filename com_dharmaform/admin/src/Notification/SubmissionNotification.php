@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Dharma\Component\DharmaForm\Administrator\Notification;
 
+use Dharma\Component\DharmaForm\Administrator\Helper\VisitorMeta;
+
 \defined('_JEXEC') or die;
 
 /**
@@ -79,6 +81,14 @@ final class SubmissionNotification
         return $out;
     }
 
+    /** Имена файлов отдельной строкой нужны, только если среди значений полей их ещё нет. */
+    private function filesLine(): string
+    {
+        $names = implode(', ', array_column($this->files, 'name'));
+
+        return $names !== '' && !\in_array($names, $this->fields, true) ? $names : '';
+    }
+
     /**
      * Строки сообщения для текстовых каналов (Telegram, MAX): заголовок, кто, остальные поля, сообщение, файлы, страница,
      * ссылка в админку. Без контактов (`$details = false`) остаются только заголовок, номер и ссылка в админку.
@@ -123,15 +133,23 @@ final class SubmissionNotification
                 $lines[] = 'Сообщение: ' . $this->submission['message'];
             }
 
-            if ($this->files) {
+            if ($this->filesLine() !== '') {
                 $lines[] = '';
-                $lines[] = 'Файлы: ' . implode(', ', array_column($this->files, 'name'));
+                $lines[] = 'Файлы: ' . $this->filesLine();
             }
         }
 
         if (!empty($this->submission['page_url'])) {
             $lines[] = '';
             $lines[] = 'Страница: ' . $this->submission['page_url'];
+        }
+
+        if ($details && ($meta = VisitorMeta::pairs((array) ($this->submission['meta'] ?? [])))) {
+            $lines[] = '';
+
+            foreach ($meta as $label => $value) {
+                $lines[] = $label . ': ' . $value;
+            }
         }
 
         $lines[] = 'Открыть в админке: ' . $this->adminUrl;
@@ -174,8 +192,8 @@ final class SubmissionNotification
             $row($e($label), nl2br($e($value)));
         }
 
-        if ($this->files) {
-            $row('Файлы', $e(implode(', ', array_column($this->files, 'name'))));
+        if ($this->filesLine() !== '') {
+            $row('Файлы', $e($this->filesLine()));
         }
 
         $message = trim((string) ($this->submission['message'] ?? ''));
@@ -196,6 +214,16 @@ final class SubmissionNotification
         if (!empty($this->submission['page_url'])) {
             $url     = (string) $this->submission['page_url'];
             $parts[] = '<p style="margin:16px 0 0;font-size:13px;color:' . $muted . ';">Страница: <a href="' . $e($url) . '" style="color:' . $accent . ';">' . $e(mb_strlen($url) > 70 ? mb_substr($url, 0, 67) . '…' : $url) . '</a></p>';
+        }
+
+        if ($meta = VisitorMeta::pairs((array) ($this->submission['meta'] ?? []))) {
+            $items = [];
+
+            foreach ($meta as $label => $value) {
+                $items[] = $e($label) . ': ' . $e($value);
+            }
+
+            $parts[] = '<p style="margin:16px 0 0;font-size:12px;line-height:1.6;color:' . $muted . ';">' . implode('<br>', $items) . '</p>';
         }
 
         $parts[] = '<p style="margin:24px 0 4px;"><a href="' . $e($this->adminUrl) . '" style="display:inline-block;padding:13px 24px;background:' . $button . ';border-radius:6px;font-size:15px;font-weight:bold;color:#ffffff;text-decoration:none;">Открыть в админке</a></p>';

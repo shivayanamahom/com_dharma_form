@@ -14,7 +14,9 @@ namespace Dharma\Component\DharmaForm\Site\Controller;
 
 use Dharma\Component\DharmaForm\Administrator\Forms\FormSanitizer;
 use Dharma\Component\DharmaForm\Administrator\Notification\SubmissionNotificationService;
+use Dharma\Component\DharmaForm\Administrator\Service\SubmissionRetentionService;
 use Dharma\Component\DharmaForm\Site\Helper\FormMarkup;
+use Dharma\Component\DharmaForm\Site\Service\ClientIp;
 use Dharma\Component\DharmaForm\Site\Service\FormService;
 use Dharma\Component\DharmaForm\Site\Service\FormSubmission;
 use Dharma\Component\DharmaForm\Site\Service\SubmissionGuard;
@@ -48,7 +50,7 @@ class FormController extends BaseController
         $params = $form['params'];
 
         $this->json(true, '', [
-            'html'  => LayoutHelper::render('dharmaform.form', ['form' => $form], JPATH_SITE . '/components/com_dharmaform/layouts'),
+            'html'  => LayoutHelper::render('dharmaform.form', ['form' => $form, 'ctx' => $this->app->getInput()->get->getString('ctx', '')], JPATH_SITE . '/components/com_dharmaform/layouts'),
             'title' => trim((string) $params['modal_title']) !== '' ? (string) $params['modal_title'] : (string) $form['title'],
             'code'  => $form['code'],
         ]);
@@ -78,12 +80,15 @@ class FormController extends BaseController
             'page_url' => $input->post->getString('page_url', ''),
             'pow'      => $input->post->getString('pow', ''),
             'dfh'      => $input->post->getString('dfh', ''),
+            'env'      => $input->post->getString('env', ''),
+            'ctx'      => $input->post->getString('ctx', ''),
+            'server'   => ['ua' => $input->server->getString('HTTP_USER_AGENT', ''), 'lang' => $input->server->getString('HTTP_ACCEPT_LANGUAGE', '')],
         ];
         $trap = SubmissionGuard::honeypotName($post['stamp']);
 
         $post[$trap] = $input->post->getString($trap, '');
 
-        $result = (new FormSubmission())->submit($form, $post, $input->server->getString('REMOTE_ADDR', ''));
+        $result = (new FormSubmission())->submit($form, $post, ClientIp::get($input->server));
         $params = $form['params'];
 
         if (!$result['ok']) {
@@ -130,9 +135,11 @@ class FormController extends BaseController
 
         if ($id > 0) {
             SubmissionNotificationService::fromContainer()->notify($id);
+            SubmissionRetentionService::purgeIfDue();
         }
 
-        $url = $pageUrl !== '' && Uri::isInternal($pageUrl) ? $pageUrl : Route::_('index.php', false);
+        $safe = FormSanitizer::pageUrl($pageUrl);
+        $url  = $safe !== '' && Uri::isInternal($safe) ? $safe : Route::_('index.php', false);
         $this->setRedirect($url);
         $this->redirect();
         $this->app->close();
@@ -162,6 +169,7 @@ class FormController extends BaseController
             }
 
             SubmissionNotificationService::fromContainer()->notify($id);
+            SubmissionRetentionService::purgeIfDue();
         }
 
         $this->app->close();

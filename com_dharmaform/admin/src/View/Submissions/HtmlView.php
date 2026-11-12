@@ -35,6 +35,12 @@ class HtmlView extends BaseHtmlView
 
     public function display($tpl = null): void
     {
+        if (!$this->getCurrentUser()->authorise('submission.view', 'com_dharmaform')) {
+            throw new \RuntimeException(\Joomla\CMS\Language\Text::_('JERROR_ALERTNOAUTHOR'), 403);
+        }
+
+        \Dharma\Component\DharmaForm\Administrator\Service\SiteUrl::remember();
+
         $model = $this->getModel();
         $model->setUseExceptions(true);
 

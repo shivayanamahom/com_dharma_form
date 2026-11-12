@@ -13,7 +13,10 @@ declare(strict_types=1);
 \defined('_JEXEC') or die;
 
 use Dharma\Component\DharmaForm\Administrator\Forms\FormSanitizer;
+use Dharma\Component\DharmaForm\Site\Helper\FormAssets;
 use Dharma\Component\DharmaForm\Site\Helper\FormMarkup;
+use Dharma\Component\DharmaForm\Site\Service\ContextResolver;
+use Dharma\Component\DharmaForm\Site\Service\FileUploader;
 use Dharma\Component\DharmaForm\Site\Service\SubmissionGuard;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Router\Route;
@@ -24,7 +27,8 @@ use Joomla\CMS\Uri\Uri;
  *  - form   — форма (`FormConfig::fromRow`): id, code, title, fields, params;
  *  - action — адрес отправки (по умолчанию `task=form.submit`);
  *  - inline — форма на странице (не в окне): без заголовка окна, адрес страницы подставляется и без JS;
- *  - title  — необязательный заголовок над формой (для формы на странице).
+ *  - title  — необязательный заголовок над формой (для формы на странице);
+ *  - ctx    — контекст формы (`dharmashop.product:205`): над полями показывается объект, он же сохраняется в заявке.
  * Переопределяется в шаблоне: html/layouts/dharmaform/form.php.
  */
 $form   = $displayData['form'];
@@ -36,6 +40,8 @@ $labels = !empty($params['show_labels']);
 $esc    = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 $t      = static fn (string $key, string $fallback): string => FormMarkup::text($key, $fallback);
 $stamp  = SubmissionGuard::stamp();
+$ctxRef = (string) ($displayData['ctx'] ?? '');
+$ctx    = $ctxRef !== '' ? ContextResolver::resolve($ctxRef, $params) : null;
 $pow    = !empty($params['protect_pow']);
 $submit = trim((string) $params['submit_text']) !== '' ? (string) $params['submit_text'] : $t('COM_DHARMAFORM_FORM_SUBMIT', 'Отправить');
 
@@ -44,6 +50,8 @@ $errorBox = static function (array $field, string $key = 'COM_DHARMAFORM_FORM_ER
 
     return '<div class="dharmaform__error" data-msg-empty="' . $esc($t($key, $fallback)) . '"' . ($custom !== '' ? ' data-msg="' . $esc($custom) . '"' : '') . ' aria-live="polite"></div>';
 };
+
+$globalParams = \Joomla\CMS\Component\ComponentHelper::getParams('com_dharmaform');
 
 $accept = static function (string $raw): string {
     $out = [];
@@ -59,13 +67,25 @@ $accept = static function (string $raw): string {
     return implode(',', $out);
 };
 ?>
-<form class="dharmaform" id="<?php echo $uid; ?>" action="<?php echo $esc($action); ?>" method="post" enctype="multipart/form-data" novalidate<?php echo $pow ? ' data-dharma-pow="' . min(24, max(8, (int) ($params['protect_pow_bits'] ?? 14))) . '"' : ''; ?> data-dharmaform-root="<?php echo $esc($form['code']); ?>">
+<form class="dharmaform" id="<?php echo $uid; ?>" action="<?php echo $esc($action); ?>" method="post" enctype="multipart/form-data" novalidate<?php echo $pow ? ' data-dharma-pow="' . min(24, max(8, (int) ($params['protect_pow_bits'] ?? 14))) . '"' : ''; ?> data-dharmaform-root="<?php echo $esc($form['code']); ?>"<?php echo $inline && FormAssets::refreshInline() ? ' data-dharma-refresh' : ''; ?><?php echo ($globalParams->get('collect_referrer', 0) || $globalParams->get('collect_screen', 0)) ? ' data-dharma-env' : ''; ?>>
     <?php if (trim((string) ($displayData['title'] ?? '')) !== '') : ?>
         <h2 class="dharmaform__title"><?php echo $esc((string) $displayData['title']); ?></h2>
     <?php endif; ?>
 
     <?php if (trim((string) $params['modal_intro']) !== '') : ?>
         <div class="dharmaform__intro"><?php echo FormMarkup::html((string) $params['modal_intro']); ?></div>
+    <?php endif; ?>
+
+    <?php if ($ctx) : ?>
+        <div class="dharmaform__context">
+            <?php if ($ctx['image'] !== '') : ?><img class="dharmaform__context-image" src="<?php echo $esc($ctx['image']); ?>" alt="" loading="lazy"><?php endif; ?>
+            <div class="dharmaform__context-text">
+                <?php if ($ctx['label'] !== '') : ?><span class="dharmaform__context-label"><?php echo $esc($ctx['label']); ?></span><?php endif; ?>
+                <strong class="dharmaform__context-title"><?php echo $esc($ctx['title']); ?></strong>
+                <?php if ($ctx['price'] !== '') : ?><span class="dharmaform__context-price"><?php echo $esc($ctx['price']); ?></span><?php endif; ?>
+            </div>
+        </div>
+        <input type="hidden" name="ctx" value="<?php echo $esc($ctxRef); ?>">
     <?php endif; ?>
 
     <div class="dharmaform__grid">
@@ -80,10 +100,20 @@ $accept = static function (string $raw): string {
         $id      = $uid . '-' . $name;
         $col     = (string) $field['width'] === '6' ? 'dharmaform__col-6' : 'dharmaform__col-12';
         $label   = (string) $field['label'];
-        $holder  = (string) $field['placeholder'] !== '' ? (string) $field['placeholder'] : (!$labels ? $label : '');
+        $showLabel = match ((string) ($field['label_mode'] ?? '')) {
+            'show'  => true,
+            'hide'  => false,
+            default => $labels,
+        };
+        $holder  = (string) $field['placeholder'] !== '' ? (string) $field['placeholder'] : (!$showLabel ? $label : '');
         $req     = !empty($field['required']);
         $reqAttr = $req ? ' required aria-required="true"' : '';
         $star    = $req ? ' <span class="dharmaform__star" aria-hidden="true">*</span>' : '';
+
+        // Без подписи над полем звёздочка обязательности уходит в подсказку внутри поля.
+        if (!$showLabel && $req && $holder !== '' && !str_ends_with($holder, '*')) {
+            $holder .= ' *';
+        }
         $box     = 'class="dharmaform__field dharmaform__field--' . $esc($type) . ' ' . $col . '" data-dharma-field="' . $esc($name) . '"' . ($req ? ' data-required="1"' : '');
         $opts    = \in_array($type, ['select', 'radio', 'checkboxes'], true) ? FormSanitizer::options((string) $field['options']) : [];
         ?>
@@ -114,7 +144,7 @@ $accept = static function (string $raw): string {
             $multiple = !empty($field['file_multiple']);
             $dropzone = $field['file_mode'] === 'dropzone';
             $maxMb    = max(1, (int) $field['file_max_mb']);
-            $exts     = $accept((string) $field['file_accept']);
+            $exts     = $accept(implode(',', FileUploader::allowed((string) $field['file_accept'])));
             $hint     = sprintf($t('COM_DHARMAFORM_FORM_FILE_HINT', 'до %s МБ'), (string) $maxMb);
             ?>
             <div <?php echo $box; ?>>
@@ -136,7 +166,7 @@ $accept = static function (string $raw): string {
             </div>
         <?php else : ?>
             <div <?php echo $box; ?>>
-                <?php if ($labels && $label !== '') : ?><label class="dharmaform__label" for="<?php echo $esc($id); ?>"><?php echo $esc($label) . $star; ?></label><?php endif; ?>
+                <?php if ($showLabel && $label !== '') : ?><label class="dharmaform__label" for="<?php echo $esc($id); ?>"><?php echo $esc($label) . $star; ?></label><?php endif; ?>
                 <?php if ($type === 'textarea') : ?>
                     <textarea class="dharmaform__control" id="<?php echo $esc($id); ?>" name="f[<?php echo $esc($name); ?>]" rows="<?php echo max(1, (int) $field['rows']); ?>" maxlength="5000"<?php echo $reqAttr; ?><?php echo $holder !== '' ? ' placeholder="' . $esc($holder) . '"' : ''; ?>></textarea>
                 <?php elseif ($type === 'select') : ?>

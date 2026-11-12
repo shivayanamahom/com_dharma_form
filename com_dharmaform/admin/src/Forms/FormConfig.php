@@ -26,6 +26,7 @@ final class FormConfig
         'name'          => '',
         'label'         => '',
         'placeholder'   => '',
+        'label_mode'    => '',
         'required'      => 0,
         'width'         => '12',
         'options'       => '',
@@ -48,6 +49,8 @@ final class FormConfig
 
     /** Значения настроек формы, если в `params` ничего не задано. */
     public const DEFAULTS = [
+        'display'             => 'popup',
+        'context_dharmashop'  => 0,
         'modal_title'         => '',
         'modal_intro'         => '',
         'submit_text'         => '',
@@ -61,6 +64,7 @@ final class FormConfig
         'auto_idle'           => 30,
         'auto_frequency'      => 'session',
         'auto_days'           => 7,
+        'auto_sent_days'      => 30,
         'auto_devices'        => 'all',
         'auto_pages'          => '',
         'auto_pages_mode'     => 'include',
@@ -98,7 +102,7 @@ final class FormConfig
     /**
      * @param object $row строка таблицы `forms`
      *
-     * @return array{id: int, code: string, title: string, fields: array<int, array<string, mixed>>, params: array<string, mixed>}
+     * @return array{id: int, code: string, title: string, access: int, fields: array<int, array<string, mixed>>, params: array<string, mixed>}
      */
     public static function fromRow(object $row): array
     {
@@ -126,6 +130,7 @@ final class FormConfig
             'id'     => (int) $row->id,
             'code'   => (string) $row->code,
             'title'  => (string) $row->title,
+            'access' => (int) ($row->access ?? 1),
             'fields' => $list,
             'params' => $params,
         ];

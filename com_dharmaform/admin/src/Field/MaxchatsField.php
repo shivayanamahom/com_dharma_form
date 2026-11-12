@@ -15,7 +15,7 @@ namespace Dharma\Component\DharmaForm\Administrator\Field;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
-use Joomla\CMS\Http\HttpFactory;
+use Dharma\Component\DharmaForm\Administrator\Service\Http;
 
 \defined('_JEXEC') or die;
 
@@ -73,7 +73,7 @@ class MaxchatsField extends ListField
         }
 
         try {
-            $response = HttpFactory::getHttp($options)->get(self::API . '/updates?limit=100&timeout=0', ['Authorization' => $token, 'Accept' => 'application/json'], 4);
+            $response = Http::get(self::API . '/updates?limit=100&timeout=0', ['Authorization' => $token, 'Accept' => 'application/json'], 4, $options);
             $payload  = json_decode((string) $response->body, true);
 
             foreach (\is_array($payload) ? ($payload['updates'] ?? []) : [] as $update) {

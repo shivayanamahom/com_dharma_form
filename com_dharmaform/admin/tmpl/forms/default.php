@@ -34,14 +34,7 @@ if ($saveOrder && !empty($this->items)) {
     HTMLHelper::_('draggablelist.draggable');
 }
 
-Text::script('COM_DHARMAFORM_SHORTCODE_COPIED');
-$wa->addInlineScript(
-    "document.addEventListener('click',function(e){var b=e.target.closest('[data-dharmaform-copy]');if(!b){return;}"
-    . "var t=b.getAttribute('data-dharmaform-copy');var done=function(){var o=b.textContent;b.textContent=Joomla.Text._('COM_DHARMAFORM_SHORTCODE_COPIED');setTimeout(function(){b.textContent=o;},1500);};"
-    . "if(navigator.clipboard){navigator.clipboard.writeText(t).then(done);}});",
-    [],
-    ['defer' => true]
-);
+$wa->useScript('com_dharmaform.copy');
 ?>
 <form action="<?php echo Route::_('index.php?option=com_dharmaform&view=forms'); ?>" method="post" name="adminForm" id="adminForm">
     <div class="row">
@@ -68,8 +61,8 @@ $wa->addInlineScript(
                                 </th>
                                 <th scope="col" class="w-1 text-center"><?php echo HTMLHelper::_('searchtools.sort', 'JSTATUS', 'a.state', $listDirn, $listOrder); ?></th>
                                 <th scope="col"><?php echo HTMLHelper::_('searchtools.sort', 'JGLOBAL_TITLE', 'a.title', $listDirn, $listOrder); ?></th>
-                                <th scope="col" class="w-15 d-none d-md-table-cell"><?php echo HTMLHelper::_('searchtools.sort', 'COM_DHARMAFORM_HEADING_CODE', 'a.code', $listDirn, $listOrder); ?></th>
-                                <th scope="col" class="w-20 d-none d-md-table-cell"><?php echo Text::_('COM_DHARMAFORM_HEADING_SHORTCODE'); ?></th>
+                                <th scope="col" class="w-10 d-none d-md-table-cell"><?php echo Text::_('COM_DHARMAFORM_HEADING_TYPE'); ?></th>
+                                <th scope="col" class="w-25 d-none d-md-table-cell"><?php echo Text::_('COM_DHARMAFORM_HEADING_CALL'); ?></th>
                                 <th scope="col" class="w-10 d-none d-md-table-cell"><?php echo HTMLHelper::_('searchtools.sort', 'COM_DHARMAFORM_HEADING_SUBMISSIONS', 'submissions', $listDirn, $listOrder); ?></th>
                                 <th scope="col" class="w-5 d-none d-md-table-cell"><?php echo HTMLHelper::_('searchtools.sort', 'JGRID_HEADING_ID', 'a.id', $listDirn, $listOrder); ?></th>
                             </tr>
@@ -93,9 +86,14 @@ $wa->addInlineScript(
                                             <?php echo $this->escape($item->title); ?>
                                         <?php endif; ?>
                                     </th>
-                                    <td class="d-none d-md-table-cell small"><?php echo $this->escape($item->code); ?></td>
+                                    <?php
+                                    $params = json_decode((string) $item->params, true) ?: [];
+                                    $popup  = ($params['display'] ?? 'popup') !== 'inline';
+                                    $call   = $popup ? $item->code : '{dharmaform ' . $item->code . '}';
+                                    ?>
+                                    <td class="d-none d-md-table-cell small"><?php echo Text::_($popup ? 'COM_DHARMAFORM_TYPE_POPUP' : 'COM_DHARMAFORM_TYPE_INLINE'); ?></td>
                                     <td class="d-none d-md-table-cell">
-                                        <button type="button" class="btn btn-sm btn-secondary" data-dharmaform-copy="<?php echo $this->escape('{dharmaform ' . $item->code . '}'); ?>"><?php echo $this->escape('{dharmaform ' . $item->code . '}'); ?></button>
+                                        <button type="button" class="btn btn-sm btn-secondary" title="<?php echo Text::_($popup ? 'COM_DHARMAFORM_CALL_POPUP_TIP' : 'COM_DHARMAFORM_CALL_INLINE_TIP'); ?>" data-dharmaform-copy="<?php echo $this->escape($call); ?>" data-copied="<?php echo Text::_('COM_DHARMAFORM_SHORTCODE_COPIED'); ?>"><?php echo $this->escape($call); ?></button>
                                     </td>
                                     <td class="d-none d-md-table-cell">
                                         <?php if ((int) $item->submissions > 0) : ?>

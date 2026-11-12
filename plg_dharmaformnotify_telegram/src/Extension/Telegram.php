@@ -14,7 +14,7 @@ namespace Dharma\Plugin\DharmaFormNotify\Telegram\Extension;
 
 use Dharma\Component\DharmaForm\Administrator\Notification\SubmissionNotification;
 use Dharma\Component\DharmaForm\Administrator\Notification\SubmissionNotificationService;
-use Joomla\CMS\Http\HttpFactory;
+use Dharma\Component\DharmaForm\Administrator\Service\Http;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\Event\EventInterface;
@@ -44,13 +44,16 @@ final class Telegram extends CMSPlugin implements SubscriberInterface
         $settings = $event->getArgument('settings');
         $message  = $event->getArgument('notification');
 
-        if (!$settings instanceof Registry || !$message instanceof SubmissionNotification || !(int) $settings->get('notify_telegram_enabled', 0)) {
+        $test = (bool) $event->getArgument('test', false);
+        $only = (string) $event->getArgument('only', '');
+
+        if (!$settings instanceof Registry || !$message instanceof SubmissionNotification || ($only !== '' && $only !== 'telegram') || (!$test && !(int) $settings->get('notify_telegram_enabled', 0))) {
             return;
         }
 
         $channels = (array) ($message->form['params']['notify_channels'] ?? []);
 
-        if ($channels && !\in_array('telegram', $channels, true)) {
+        if (!$test && $channels && !\in_array('telegram', $channels, true)) {
             return;
         }
 
@@ -61,6 +64,10 @@ final class Telegram extends CMSPlugin implements SubscriberInterface
         if ($token === '' || !$recipients) {
             Log::add('Telegram notification skipped: token or chats are not configured', Log::WARNING, 'com_dharmaform');
 
+            if ($test) {
+                SubmissionNotificationService::report($event, 'telegram', $token === '' ? 'telegram_no_token' : 'telegram_no_chats');
+            }
+
             return;
         }
 
@@ -69,7 +76,7 @@ final class Telegram extends CMSPlugin implements SubscriberInterface
         $text    = mb_substr(implode("\n", $message->lines((bool) (int) $settings->get('notify_telegram_details', 1))), 0, self::TEXT_MAX);
 
         foreach ($recipients as $chat) {
-            $deliveryId = $service->claim($message, 'telegram', $chat, $retry);
+            $deliveryId = $test ? 0 : $service->claim($message, 'telegram', $chat, $retry);
 
             if ($deliveryId === null) {
                 continue;
@@ -86,7 +93,11 @@ final class Telegram extends CMSPlugin implements SubscriberInterface
                 Log::add('Telegram delivery ' . $deliveryId . ' failed: ' . $error, Log::ERROR, 'com_dharmaform');
             }
 
-            $service->finish($deliveryId, $sent, $error);
+            if ($test) {
+                SubmissionNotificationService::report($event, 'telegram:' . $chat, $sent ? 'ok' : $error);
+            } else {
+                $service->finish($deliveryId, $sent, $error);
+            }
         }
     }
 
@@ -112,7 +123,7 @@ final class Telegram extends CMSPlugin implements SubscriberInterface
     {
         $body = json_encode(['chat_id' => $chatId, 'text' => $text, 'link_preview_options' => ['is_disabled' => true]], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
 
-        $response = HttpFactory::getHttp(['timeout' => 8])->post(
+        $response = Http::post(
             'https://api.telegram.org/bot' . $token . '/sendMessage',
             $body,
             ['Content-Type' => 'application/json', 'Accept' => 'application/json'],

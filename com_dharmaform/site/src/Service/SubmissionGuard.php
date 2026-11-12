@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Dharma\Component\DharmaForm\Site\Service;
 
-use Joomla\CMS\Cache\CacheControllerFactoryInterface;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 
@@ -170,6 +169,10 @@ final class SubmissionGuard
             }
         }
 
+        if (!empty($extra['rate_hit'])) {
+            $add('rate', self::INSTANT);
+        }
+
         $flood = (int) ($params['protect_flood_limit'] ?? 0);
 
         if ($flood > 0 && (int) ($extra['recent_form'] ?? 0) >= $flood) {
@@ -212,26 +215,32 @@ final class SubmissionGuard
         return (int) $m[1] >= 1 && (int) $m[2] >= 400;
     }
 
-    /** Одноразовый номер метки: повторная отправка той же формы (повтор запроса ботом) отклоняется. */
+    /**
+     * Одноразовый номер метки: повторная отправка с той же меткой (повтор запроса ботом, параллельные запросы) отклоняется.
+     * Занять номер — одна вставка в таблицу с уникальным ключом: двое одновременно его не займут.
+     */
     private static function useNonce(string $nonce): bool
     {
-        try {
-            $cache = Factory::getContainer()->get(CacheControllerFactoryInterface::class)->createCacheController('output', [
-                'defaultgroup' => 'com_dharmaform_nonce',
-                'caching'      => true,
-                'lifetime'     => (int) ceil(self::MAX_AGE / 60),
-            ]);
+        if (!preg_match('~^[a-f0-9]{12}$~', $nonce)) {
+            return false;
+        }
 
-            if ($cache->contains($nonce)) {
-                return false;
+        try {
+            $db  = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+            $now = Factory::getDate();
+
+            $db->setQuery('INSERT IGNORE INTO ' . $db->quoteName('#__dharmaform_nonces') . ' (nonce, created) VALUES (' . $db->quote($nonce) . ', ' . $db->quote($now->toSql()) . ')')->execute();
+            $first = $db->getAffectedRows() === 1;
+
+            // Старые номера (метка живёт два часа) убираются изредка, чтобы таблица не росла.
+            if (random_int(1, 50) === 1) {
+                $db->setQuery('DELETE FROM ' . $db->quoteName('#__dharmaform_nonces') . ' WHERE created < ' . $db->quote(Factory::getDate('-3 hours')->toSql()))->execute();
             }
 
-            $cache->store('1', $nonce);
+            return $first;
         } catch (\Throwable) {
             return true;
         }
-
-        return true;
     }
 
     /** Очевидная «абракадабра»: длинные цепочки согласных, повторы одного знака, случайный регистр, сплошные заглавные. */

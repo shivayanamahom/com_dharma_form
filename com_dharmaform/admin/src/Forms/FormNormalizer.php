@@ -26,8 +26,6 @@ final class FormNormalizer
     private const HIDDEN_SOURCES = ['page_url', 'page_title', 'custom'];
 
     /** Расширения, которые нельзя разрешать к загрузке никогда: исполняемые и способные выполнить скрипт в браузере. */
-    private const FORBIDDEN_EXT = ['php', 'php3', 'php4', 'php5', 'php7', 'php8', 'phtml', 'phar', 'pht', 'pl', 'py', 'cgi', 'asp', 'aspx', 'jsp', 'exe', 'dll', 'sh', 'bat', 'cmd', 'com', 'js', 'mjs', 'html', 'htm', 'xhtml', 'svg', 'htaccess', 'ini', 'cfg'];
-
     /**
      * @param array<int, mixed> $raw строки конструктора
      *
@@ -81,6 +79,7 @@ final class FormNormalizer
                 'name'        => $name,
                 'label'       => $label,
                 'placeholder' => mb_substr(trim((string) ($row['placeholder'] ?? '')), 0, 255),
+                'label_mode'  => \in_array($row['label_mode'] ?? '', ['show', 'hide'], true) ? (string) $row['label_mode'] : '',
                 'required'    => (int) !empty($row['required']),
                 'error_text'  => mb_substr(trim((string) ($row['error_text'] ?? '')), 0, 255),
                 'width'       => (string) ($row['width'] ?? '12') === '6' ? '6' : '12',
@@ -140,10 +139,6 @@ final class FormNormalizer
                     $field['file_accept']    = self::accept((string) ($row['file_accept'] ?? ''));
                     $field['file_max_mb']    = max(1, min(50, (int) ($row['file_max_mb'] ?? 5)));
                     $field['file_max_count'] = $field['file_multiple'] ? max(1, min(20, (int) ($row['file_max_count'] ?? 5))) : 1;
-
-                    if ($field['file_accept'] === '') {
-                        return [[], Text::sprintf('COM_DHARMAFORM_FORM_ERROR_FIELD_ACCEPT', $name)];
-                    }
                     break;
             }
 
@@ -230,7 +225,7 @@ final class FormNormalizer
         foreach (preg_split('~[\s,;.]+~', strtolower($value), -1, PREG_SPLIT_NO_EMPTY) ?: [] as $ext) {
             $ext = (string) preg_replace('~[^a-z0-9]+~', '', $ext);
 
-            if ($ext !== '' && \strlen($ext) <= 8 && !\in_array($ext, self::FORBIDDEN_EXT, true)) {
+            if ($ext !== '' && \strlen($ext) <= 8 && !\in_array($ext, \Dharma\Component\DharmaForm\Site\Service\FileUploader::BLOCKED, true)) {
                 $out[$ext] = $ext;
             }
         }
@@ -265,6 +260,16 @@ final class FormNormalizer
             if (isset($params[$key])) {
                 $params[$key] = mb_substr(trim(strip_tags((string) $params[$key])), 0, 255);
             }
+        }
+
+        foreach (['context_dharmashop'] as $key) {
+            if (isset($params[$key])) {
+                $params[$key] = (int) !empty($params[$key]);
+            }
+        }
+
+        if (isset($params['display']) && !\in_array($params['display'], ['popup', 'inline'], true)) {
+            $params['display'] = 'popup';
         }
 
         if (isset($params['trigger_class'])) {
@@ -310,9 +315,15 @@ final class FormNormalizer
         $clamp($params, 'auto_scroll', 1, 100);
         $clamp($params, 'auto_idle', 5, 3600);
         $clamp($params, 'auto_days', 1, 365);
+        $clamp($params, 'auto_sent_days', 0, 365);
 
         // Ни один флажок не отмечен — браузер не присылает поле вовсе: сохраняется пустой список, а не умолчание.
         $params['auto_triggers'] = array_values(array_intersect(['delay', 'scroll', 'exit', 'idle'], (array) ($params['auto_triggers'] ?? [])));
+
+        // Автопоказ без единого выбранного триггера ничего бы не делал: берётся показ по времени.
+        if (!empty($params['auto_enabled']) && empty($params['auto_triggers'])) {
+            $params['auto_triggers'] = ['delay'];
+        }
 
         if (isset($params['auto_frequency']) && !\in_array($params['auto_frequency'], ['always', 'session', 'days'], true)) {
             $params['auto_frequency'] = 'session';

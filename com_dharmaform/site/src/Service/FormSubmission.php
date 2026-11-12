@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Dharma\Component\DharmaForm\Site\Service;
 
 use Dharma\Component\DharmaForm\Administrator\Forms\FormSanitizer;
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\Database\DatabaseInterface;
@@ -55,7 +56,7 @@ final class FormSubmission
         $data    = [];
         $uploads = [];
         $consent = false;
-        $pageUrl = FormSanitizer::pageUrl((string) ($input['page_url'] ?? ''));
+        $pageUrl = FormSanitizer::pageUrl((string) preg_replace('~#.*$~', '', (string) ($input['page_url'] ?? '')));
 
         foreach ($form['fields'] as $field) {
             $type = (string) $field['type'];
@@ -109,12 +110,14 @@ final class FormSubmission
             return ['ok' => false, 'error' => '', 'errors' => $errors, 'spam' => false, 'submission_id' => 0];
         }
 
-        $ipHash  = SubmissionGuard::ipHash($ip);
+        $ipHash  = SubmissionGuard::ipHash(ClientIp::bucket($ip));
         $limit   = (int) $params['protect_rate_limit'];
         $contact = [$main['phone'], $main['email']];
+        $recent  = $limit > 0 ? $this->recent($ipHash) : 0;
 
-        if ($limit > 0 && $this->recent($ipHash) >= $limit) {
-            return $this->fail(Text::_('COM_DHARMAFORM_FORM_ERROR_RATE'));
+        // Намного больше лимита — явная атака: ничего не записываем и не рассылаем, а ответ тот же «принято».
+        if ($limit > 0 && $recent >= $limit * 3) {
+            return ['ok' => true, 'error' => '', 'errors' => [], 'spam' => true, 'submission_id' => 0];
         }
 
         if ($this->isDuplicate((int) $form['id'], $contact, $data)) {
@@ -126,16 +129,35 @@ final class FormSubmission
             'email'       => $main['email'],
             'ip'          => $ip,
             'recent_form' => $this->recentForm((int) $form['id']),
+            'rate_hit'    => $limit > 0 && $recent >= $limit,
         ]);
         $spam    = $verdict['spam'];
+
+        // Объект другого компонента (товар): ищется заново на сервере; его строки не входят в проверку на спам.
+        $context = (string) ($input['ctx'] ?? '') !== '' ? ContextResolver::resolve((string) $input['ctx'], $params) : null;
+
+        foreach ($context['lines'] ?? [] as $label => $value) {
+            $data[$label] = $value;
+        }
+
         $stored  = $spam ? [] : FileUploader::store($uploads);
 
-        if ($uploads && !$spam && !$stored) {
+        if ($uploads && !$spam && \count($stored) !== \count($uploads)) {
+            FileUploader::deleteFiles($stored);
+
             return $this->fail(Text::_('COM_DHARMAFORM_FORM_ERROR_FILE_UPLOAD'));
         }
 
         $now  = Factory::getDate();
-        $days = $params['retention_days'] !== '' ? max(0, (int) $params['retention_days']) : 0;
+        $global = ComponentHelper::getParams('com_dharmaform');
+        $days   = $params['retention_days'] !== '' ? max(0, (int) $params['retention_days']) : max(0, (int) $global->get('retention_days', 365));
+
+        // Спам хранится меньше: срок для него в настройках компонента (если он короче общего).
+        $spamDays = max(0, (int) $global->get('retention_spam_days', 30));
+
+        if ($spam && $spamDays > 0 && ($days === 0 || $spamDays < $days)) {
+            $days = $spamDays;
+        }
         $row  = (object) [
             'form_id'     => (int) $form['id'],
             'name'        => mb_substr($main['name'], 0, 255),
@@ -146,6 +168,7 @@ final class FormSubmission
             'files'       => json_encode($stored, JSON_UNESCAPED_UNICODE),
             'page_url'    => mb_substr($pageUrl, 0, 500),
             'utm'         => json_encode($this->utm((array) ($input['utm'] ?? [])), JSON_UNESCAPED_UNICODE),
+            'meta'        => json_encode(VisitorInfo::collect($ip, (array) ($input['server'] ?? []), (string) ($input['env'] ?? '')), JSON_UNESCAPED_UNICODE),
             'ip_hash'     => $ipHash,
             'consent_at'  => $consent ? $now->toSql() : null,
             'is_spam'     => $spam ? 1 : 0,
@@ -170,7 +193,20 @@ final class FormSubmission
 
     private function labelOf(array $field): string
     {
-        return trim((string) $field['label']) !== '' ? (string) $field['label'] : (string) $field['name'];
+        if (trim((string) $field['label']) !== '') {
+            return (string) $field['label'];
+        }
+
+        // Скрытое поле без подписи называется по тому, что в нём лежит, а не служебным именем.
+        if ($field['type'] === 'hidden') {
+            $key = ['page_url' => 'COM_DHARMAFORM_HIDDEN_LABEL_PAGE_URL', 'page_title' => 'COM_DHARMAFORM_HIDDEN_LABEL_PAGE_TITLE'][(string) $field['hidden_source']] ?? '';
+
+            if ($key !== '') {
+                return Text::_($key);
+            }
+        }
+
+        return (string) $field['name'];
     }
 
     /**
@@ -195,8 +231,15 @@ final class FormSubmission
         }
 
         if ($type === 'checkboxes') {
-            $allowed = array_column(FormSanitizer::options((string) $field['options']), 'value');
-            $chosen  = array_values(array_intersect(\is_array($raw) ? array_map('strval', array_filter($raw, 'is_scalar')) : [], $allowed));
+            $sent   = \is_array($raw) ? array_map('strval', array_filter($raw, 'is_scalar')) : [];
+            $chosen = [];
+
+            // В заявку попадают подписи вариантов, как их видел посетитель, в порядке списка.
+            foreach (FormSanitizer::options((string) $field['options']) as $option) {
+                if (\in_array($option['value'], $sent, true)) {
+                    $chosen[] = $option['label'];
+                }
+            }
 
             return !$chosen && $required ? $err('COM_DHARMAFORM_FORM_ERROR_CHOICE_MULTI') : $ok(implode(', ', $chosen));
         }
@@ -234,7 +277,13 @@ final class FormSubmission
 
             case 'select':
             case 'radio':
-                return \in_array($value, array_column(FormSanitizer::options((string) $field['options']), 'value'), true) ? $ok($value) : $err('COM_DHARMAFORM_FORM_ERROR_CHOICE');
+                foreach (FormSanitizer::options((string) $field['options']) as $option) {
+                    if ($option['value'] === $value) {
+                        return $ok($option['label']);
+                    }
+                }
+
+                return $err('COM_DHARMAFORM_FORM_ERROR_CHOICE');
 
             case 'date':
                 $date = \DateTime::createFromFormat('Y-m-d', $value);

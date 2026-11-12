@@ -20,7 +20,7 @@ use Joomla\Database\DatabaseInterface;
 \defined('_JEXEC') or die;
 
 /**
- * Чтение опубликованных форм. Все формы читаются одним запросом и лежат в кэше Joomla (группа `com_dharmaform`),
+ * Чтение опубликованных форм. Лёгкий список (без полей) читается одним запросом и лежит в кэше Joomla (группа `com_dharmaform`),
  * который сбрасывается при любом изменении формы (`clearCache`): на странице без форм и открывателей запросов к базе нет.
  */
 final class FormService
@@ -32,10 +32,14 @@ final class FormService
     /** @var array<string, array<string, mixed>>|null */
     private static ?array $memory = null;
 
+    /** @var array<string, array<string, mixed>|null> */
+    private static array $full = [];
+
     /** Сбросить кэш форм (после сохранения, удаления, смены состояния формы). */
     public static function clearCache(): void
     {
         self::$memory = null;
+        self::$full   = [];
 
         try {
             Factory::getContainer()->get(CacheControllerFactoryInterface::class)->createCacheController('callback', ['defaultgroup' => self::CACHE_GROUP])->clean();
@@ -44,7 +48,12 @@ final class FormService
         }
     }
 
-    /** @return array<string, array<string, mixed>> опубликованные формы по коду (`FormConfig::fromRow`) */
+    /**
+     * Лёгкий список опубликованных форм для каждой страницы сайта (открыватели, автопоказ, привязки): без описания полей, которое
+     * может быть большим и нужно только при показе и отправке формы.
+     *
+     * @return array<string, array<string, mixed>> код => форма без `fields`
+     */
     private static function all(): array
     {
         if (self::$memory !== null) {
@@ -53,10 +62,11 @@ final class FormService
 
         $load = static function (): array {
             $db   = Factory::getContainer()->get(DatabaseInterface::class);
-            $rows = $db->setQuery('SELECT * FROM ' . $db->quoteName('#__dharmaform_forms') . ' WHERE state = 1 ORDER BY ordering, title')->loadObjectList() ?: [];
+            $rows = $db->setQuery('SELECT id, code, title, access, params FROM ' . $db->quoteName('#__dharmaform_forms') . ' WHERE state = 1 ORDER BY ordering, title')->loadObjectList() ?: [];
             $out  = [];
 
             foreach ($rows as $row) {
+                $row->fields = '[]';
                 $out[(string) $row->code] = FormConfig::fromRow($row);
             }
 
@@ -72,24 +82,74 @@ final class FormService
         }
     }
 
-    /** @return array<string, mixed>|null форма (`FormConfig::fromRow`) или null */
+    /** Доступна ли форма посетителю по уровню доступа, заданному в форме (кэш форм один на всех, фильтр — по текущему пользователю). */
+    private static function visible(array $form): bool
+    {
+        $levels = Factory::getApplication()->getIdentity()->getAuthorisedViewLevels();
+
+        return \in_array((int) ($form['access'] ?? 1), array_map('intval', $levels), true);
+    }
+
+    /** @return array<string, array<string, mixed>> формы, доступные текущему посетителю */
+    private static function allVisible(): array
+    {
+        return array_filter(self::all(), static fn (array $form): bool => self::visible($form));
+    }
+
+    /** @return array<string, mixed>|null форма (`FormConfig::fromRow`) или null: нет, не опубликована или нет доступа */
     public function byCode(string $code): ?array
     {
         $code = (string) preg_replace('~[^A-Za-z0-9._-]+~', '', $code);
 
-        return $code !== '' ? (self::all()[$code] ?? null) : null;
+        if ($code === '') {
+            return null;
+        }
+
+        // Полное описание (с полями) читается одной строкой и только для показа или отправки формы.
+        if (!isset(self::$full[$code])) {
+            $db  = Factory::getContainer()->get(DatabaseInterface::class);
+            $row = $db->setQuery('SELECT * FROM ' . $db->quoteName('#__dharmaform_forms') . ' WHERE state = 1 AND code = ' . $db->quote($code))->loadObject();
+
+            self::$full[$code] = $row ? FormConfig::fromRow($row) : null;
+        }
+
+        $form = self::$full[$code];
+
+        return $form !== null && self::visible($form) ? $form : null;
     }
 
-    /** Классы-открыватели опубликованных форм: код формы => список классов. @return array<string, string[]> */
+    /** Классы-открыватели всплывающих форм: код формы => список классов (первый — сам код). @return array<string, string[]> */
     public function triggers(): array
     {
         $out = [];
 
-        foreach (self::all() as $code => $form) {
-            $classes = preg_split('~\s+~', trim((string) $form['params']['trigger_class']), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        foreach (self::allVisible() as $code => $form) {
+            if ($form['params']['display'] !== 'popup') {
+                continue;
+            }
 
-            if ($classes) {
-                $out[$code] = array_values($classes);
+            // Открывает форму сам код как класс (и его безопасный вариант с префиксом) и классы из настроек формы.
+            $classes = preg_split('~\s+~', trim((string) $form['params']['trigger_class']), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+            $out[$code] = array_values(array_unique(array_merge([$code, 'dharmaform-' . $code], $classes)));
+        }
+
+        return $out;
+    }
+
+    /**
+     * Правила привязки к объекту (товару) для всплывающих форм: код формы => правила (`ContextResolver::rulesFor`).
+     *
+     * @return array<string, array<int, array<string, mixed>>>
+     */
+    public function contexts(): array
+    {
+        $out = [];
+
+        foreach (self::allVisible() as $code => $form) {
+            $rules = $form['params']['display'] === 'popup' ? ContextResolver::rulesFor($form['params']) : [];
+
+            if ($rules) {
+                $out[$code] = $rules;
             }
         }
 
@@ -106,10 +166,10 @@ final class FormService
     {
         $out = [];
 
-        foreach (self::all() as $code => $form) {
+        foreach (self::allVisible() as $code => $form) {
             $p = $form['params'];
 
-            if (empty($p['auto_enabled']) || !(array) $p['auto_triggers']) {
+            if ($p['display'] !== 'popup' || empty($p['auto_enabled']) || !(array) $p['auto_triggers']) {
                 continue;
             }
 
@@ -124,6 +184,7 @@ final class FormService
                 'idle'      => max(5, (int) $p['auto_idle']),
                 'frequency' => \in_array($p['auto_frequency'], ['always', 'session', 'days'], true) ? (string) $p['auto_frequency'] : 'session',
                 'days'      => max(1, (int) $p['auto_days']),
+                'sent'      => max(0, (int) $p['auto_sent_days']),
                 'devices'   => \in_array($p['auto_devices'], ['desktop', 'mobile'], true) ? (string) $p['auto_devices'] : 'all',
             ];
         }
@@ -158,6 +219,6 @@ final class FormService
     /** Коды и названия опубликованных форм. @return array<string, string> */
     public function options(): array
     {
-        return array_map(static fn (array $form): string => (string) $form['title'], self::all());
+        return array_map(static fn (array $form): string => (string) $form['title'], self::allVisible());
     }
 }

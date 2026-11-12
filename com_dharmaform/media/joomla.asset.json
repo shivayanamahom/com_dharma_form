@@ -19,6 +19,33 @@
 			"attributes": {
 				"defer": true
 			}
+		},
+		{
+			"name": "com_dharmaform.notify-test",
+			"type": "script",
+			"uri": "com_dharmaform/notify-test.js",
+			"version": "auto",
+			"attributes": {
+				"defer": true
+			}
+		},
+		{
+			"name": "com_dharmaform.copy",
+			"type": "script",
+			"uri": "com_dharmaform/copy.js",
+			"version": "auto",
+			"attributes": {
+				"defer": true
+			}
+		},
+		{
+			"name": "com_dharmaform.form-ui",
+			"type": "script",
+			"uri": "com_dharmaform/form-ui.js",
+			"version": "auto",
+			"attributes": {
+				"defer": true
+			}
 		}
 	]
 }

@@ -14,7 +14,7 @@ namespace Dharma\Plugin\DharmaFormNotify\Max\Extension;
 
 use Dharma\Component\DharmaForm\Administrator\Notification\SubmissionNotification;
 use Dharma\Component\DharmaForm\Administrator\Notification\SubmissionNotificationService;
-use Joomla\CMS\Http\HttpFactory;
+use Dharma\Component\DharmaForm\Administrator\Service\Http;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\Event\EventInterface;
@@ -48,13 +48,16 @@ final class Max extends CMSPlugin implements SubscriberInterface
         $settings = $event->getArgument('settings');
         $message  = $event->getArgument('notification');
 
-        if (!$settings instanceof Registry || !$message instanceof SubmissionNotification || !(int) $settings->get('notify_max_enabled', 0)) {
+        $test = (bool) $event->getArgument('test', false);
+        $only = (string) $event->getArgument('only', '');
+
+        if (!$settings instanceof Registry || !$message instanceof SubmissionNotification || ($only !== '' && $only !== 'max') || (!$test && !(int) $settings->get('notify_max_enabled', 0))) {
             return;
         }
 
         $channels = (array) ($message->form['params']['notify_channels'] ?? []);
 
-        if ($channels && !\in_array('max', $channels, true)) {
+        if (!$test && $channels && !\in_array('max', $channels, true)) {
             return;
         }
 
@@ -65,6 +68,10 @@ final class Max extends CMSPlugin implements SubscriberInterface
         if ($token === '' || !$recipients) {
             Log::add('MAX notification skipped: token or chats are not configured', Log::WARNING, 'com_dharmaform');
 
+            if ($test) {
+                SubmissionNotificationService::report($event, 'max', $token === '' ? 'max_no_token' : 'max_no_chats');
+            }
+
             return;
         }
 
@@ -74,7 +81,7 @@ final class Max extends CMSPlugin implements SubscriberInterface
         $ca      = trim((string) $settings->get('notify_max_ca', ''));
 
         foreach ($recipients as $recipient) {
-            $deliveryId = $service->claim($message, 'max', $recipient, $retry);
+            $deliveryId = $test ? 0 : $service->claim($message, 'max', $recipient, $retry);
 
             if ($deliveryId === null) {
                 continue;
@@ -91,7 +98,11 @@ final class Max extends CMSPlugin implements SubscriberInterface
                 Log::add('MAX delivery ' . $deliveryId . ' failed: ' . $error, Log::ERROR, 'com_dharmaform');
             }
 
-            $service->finish($deliveryId, $sent, $error);
+            if ($test) {
+                SubmissionNotificationService::report($event, 'max:' . $recipient, $sent ? 'ok' : $error);
+            } else {
+                $service->finish($deliveryId, $sent, $error);
+            }
 
             // Не больше двух сообщений в секунду в один диалог, чат или канал.
             usleep(550000);
@@ -147,7 +158,7 @@ final class Max extends CMSPlugin implements SubscriberInterface
             $options['transport.curl'] = [CURLOPT_CAINFO => $ca];
         }
 
-        $response = HttpFactory::getHttp($options)->post($request['url'], $request['body'], $request['headers'], 8);
+        $response = Http::post($request['url'], $request['body'], $request['headers'], 8, $options);
         $result   = json_decode((string) $response->body, true);
 
         if ((int) $response->code < 200 || (int) $response->code >= 300 || !\is_array($result) || !isset($result['message'])) {

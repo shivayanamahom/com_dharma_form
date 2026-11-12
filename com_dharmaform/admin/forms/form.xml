@@ -31,6 +31,11 @@
 				<field name="label" type="text" label="COM_DHARMAFORM_FIELD_LABEL_LABEL" description="COM_DHARMAFORM_FIELD_LABEL_DESC" maxlength="255" filter="string" showon="type!:content" />
 				<field name="name" type="text" label="COM_DHARMAFORM_FIELD_NAME_LABEL" description="COM_DHARMAFORM_FIELD_NAME_DESC" hint="COM_DHARMAFORM_FIELD_NAME_HINT" maxlength="32" filter="string" showon="type!:content" />
 				<field name="placeholder" type="text" label="COM_DHARMAFORM_FIELD_PLACEHOLDER_LABEL" maxlength="255" filter="string" showon="type:text[OR]type:email[OR]type:textarea[OR]type:tel[OR]type:select[OR]type:date" />
+				<field name="label_mode" type="list" label="COM_DHARMAFORM_FIELD_LABEL_MODE_LABEL" description="COM_DHARMAFORM_FIELD_LABEL_MODE_DESC" default="" validate="options" showon="type:text[OR]type:email[OR]type:textarea[OR]type:tel[OR]type:select[OR]type:date">
+					<option value="">COM_DHARMAFORM_LABEL_MODE_FORM</option>
+					<option value="show">COM_DHARMAFORM_LABEL_MODE_SHOW</option>
+					<option value="hide">COM_DHARMAFORM_LABEL_MODE_HIDE</option>
+				</field>
 				<field name="required" type="radio" label="COM_DHARMAFORM_FIELD_REQUIRED_LABEL" layout="joomla.form.field.radio.switcher" default="0" filter="integer" showon="type!:hidden[AND]type!:content">
 					<option value="0">JNO</option>
 					<option value="1">JYES</option>
@@ -76,7 +81,11 @@
 	</fieldset>
 	<fields name="params">
 		<fieldset name="window">
-			<field name="modal_title" type="text" label="COM_DHARMAFORM_FORM_MODAL_TITLE_LABEL" description="COM_DHARMAFORM_FORM_MODAL_TITLE_DESC" maxlength="255" filter="string" />
+			<field name="display" type="list" label="COM_DHARMAFORM_FORM_DISPLAY_LABEL" description="COM_DHARMAFORM_FORM_DISPLAY_DESC" default="popup" validate="options">
+				<option value="popup">COM_DHARMAFORM_FORM_DISPLAY_POPUP</option>
+				<option value="inline">COM_DHARMAFORM_FORM_DISPLAY_INLINE</option>
+			</field>
+			<field name="modal_title" type="text" label="COM_DHARMAFORM_FORM_MODAL_TITLE_LABEL" description="COM_DHARMAFORM_FORM_MODAL_TITLE_DESC" maxlength="255" filter="string" showon="display:popup" />
 			<field name="modal_intro" type="textarea" label="COM_DHARMAFORM_FORM_MODAL_INTRO_LABEL" description="COM_DHARMAFORM_FORM_MODAL_INTRO_DESC" rows="3" maxlength="2000" filter="raw" />
 			<field name="submit_text" type="text" label="COM_DHARMAFORM_FORM_SUBMIT_TEXT_LABEL" description="COM_DHARMAFORM_FORM_SUBMIT_TEXT_DESC" maxlength="100" filter="string" />
 			<field name="button_class" type="text" label="COM_DHARMAFORM_FORM_BUTTON_CLASS_LABEL" description="COM_DHARMAFORM_FORM_BUTTON_CLASS_DESC" maxlength="255" filter="string" />
@@ -84,7 +93,13 @@
 				<option value="0">JNO</option>
 				<option value="1">JYES</option>
 			</field>
-			<field name="trigger_class" type="text" label="COM_DHARMAFORM_FORM_TRIGGER_CLASS_LABEL" description="COM_DHARMAFORM_FORM_TRIGGER_CLASS_DESC" maxlength="255" filter="string" />
+			<field name="trigger_class" type="text" label="COM_DHARMAFORM_FORM_TRIGGER_CLASS_LABEL" description="COM_DHARMAFORM_FORM_TRIGGER_CLASS_DESC" maxlength="255" filter="string" showon="display:popup" />
+		</fieldset>
+		<fieldset name="context">
+			<field name="context_dharmashop" type="radio" label="COM_DHARMAFORM_FORM_CONTEXT_DHARMASHOP_LABEL" description="COM_DHARMAFORM_FORM_CONTEXT_DHARMASHOP_DESC" layout="joomla.form.field.radio.switcher" default="0" filter="integer">
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
+			</field>
 		</fieldset>
 		<fieldset name="auto">
 			<field name="auto_enabled" type="radio" label="COM_DHARMAFORM_FORM_AUTO_ENABLED_LABEL" description="COM_DHARMAFORM_FORM_AUTO_ENABLED_DESC" layout="joomla.form.field.radio.switcher" default="0" filter="integer">
@@ -111,6 +126,7 @@
 				<option value="desktop">COM_DHARMAFORM_FORM_AUTO_DEV_DESKTOP</option>
 				<option value="mobile">COM_DHARMAFORM_FORM_AUTO_DEV_MOBILE</option>
 			</field>
+			<field name="auto_sent_days" type="number" label="COM_DHARMAFORM_FORM_AUTO_SENT_LABEL" description="COM_DHARMAFORM_FORM_AUTO_SENT_DESC" default="30" min="0" max="365" filter="integer" showon="auto_enabled:1" />
 			<field name="auto_pages_mode" type="list" label="COM_DHARMAFORM_FORM_AUTO_PAGES_MODE_LABEL" default="include" validate="options" showon="auto_enabled:1">
 				<option value="include">COM_DHARMAFORM_FORM_AUTO_PAGES_INCLUDE</option>
 				<option value="exclude">COM_DHARMAFORM_FORM_AUTO_PAGES_EXCLUDE</option>
@@ -125,7 +141,7 @@
 			<field name="success_message" type="textarea" label="COM_DHARMAFORM_FORM_SUCCESS_MESSAGE_LABEL" description="COM_DHARMAFORM_FORM_SUCCESS_MESSAGE_DESC" rows="3" maxlength="2000" filter="raw" showon="after_action:message" />
 			<field name="success_redirect" type="text" label="COM_DHARMAFORM_FORM_SUCCESS_REDIRECT_LABEL" description="COM_DHARMAFORM_FORM_SUCCESS_REDIRECT_DESC" maxlength="500" hint="https://" filter="string" showon="after_action:redirect" />
 			<field name="after_delay" type="number" label="COM_DHARMAFORM_FORM_AFTER_DELAY_LABEL" description="COM_DHARMAFORM_FORM_AFTER_DELAY_DESC" default="3" min="0" max="60" filter="integer" />
-			<field name="close_modal" type="radio" label="COM_DHARMAFORM_FORM_CLOSE_MODAL_LABEL" description="COM_DHARMAFORM_FORM_CLOSE_MODAL_DESC" layout="joomla.form.field.radio.switcher" default="1" filter="integer" showon="after_action:message">
+			<field name="close_modal" type="radio" label="COM_DHARMAFORM_FORM_CLOSE_MODAL_LABEL" description="COM_DHARMAFORM_FORM_CLOSE_MODAL_DESC" layout="joomla.form.field.radio.switcher" default="1" filter="integer" showon="after_action:message[AND]display:popup">
 				<option value="0">JNO</option>
 				<option value="1">JYES</option>
 			</field>

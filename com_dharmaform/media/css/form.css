@@ -512,6 +512,42 @@ html.dharmaform-lock {
 
 .dharmaform-modal__close:hover {
     background: rgba(var(--dform-primary-rgb), .12);
+}
+
+/* Крестик нарисован линиями ровно по центру кружка и поворачивается сам, кружок стоит на месте. */
+.dharmaform-modal__close span {
+    position: relative;
+    display: block;
+    width: 1.125rem;
+    height: 1.125rem;
+    font-size: 0;
+    line-height: 0;
+    transition: transform .35s cubic-bezier(.4, 0, .2, 1);
+}
+
+.dharmaform-modal__close span::before,
+.dharmaform-modal__close span::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    margin-top: -1px;
+    border-radius: 2px;
+    background: currentColor;
+}
+
+.dharmaform-modal__close span::before {
+    transform: rotate(45deg);
+}
+
+.dharmaform-modal__close span::after {
+    transform: rotate(-45deg);
+}
+
+.dharmaform-modal__close:hover span,
+.dharmaform-modal__close:focus-visible span {
     transform: rotate(90deg);
 }
 
@@ -546,4 +582,48 @@ html.dharmaform-lock {
         animation: none;
         stroke-dashoffset: 0;
     }
+}
+
+/* Объект другого компонента (товар) над полями формы */
+.dharmaform__context {
+    display: flex;
+    align-items: center;
+    gap: .875rem;
+    margin-bottom: 1.25rem;
+    padding: .75rem 1rem;
+    border-radius: 1rem;
+    background: var(--dharma-surface-gray, #f3f4f6);
+}
+
+.dharmaform__context-image {
+    flex: 0 0 auto;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: .75rem;
+    background: #fff;
+    object-fit: contain;
+}
+
+.dharmaform__context-text {
+    display: flex;
+    flex-direction: column;
+    gap: .125rem;
+    min-width: 0;
+}
+
+.dharmaform__context-label {
+    color: var(--dharma-muted, #6c757d);
+    font-size: .75rem;
+}
+
+.dharmaform__context-title {
+    color: var(--dharma-ink, #212529);
+    font-size: .9375rem;
+    line-height: 1.3;
+}
+
+.dharmaform__context-price {
+    color: var(--dharma-ink, #212529);
+    font-size: .875rem;
+    font-weight: 700;
 }

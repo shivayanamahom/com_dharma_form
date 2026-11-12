@@ -12,7 +12,7 @@ trap 'rm -rf "$stage"' EXIT
 mkdir -p dist
 rm -f "$out"
 
-EXTENSIONS=(com_dharmaform plg_system_dharmaform plg_task_dharmaform plg_dharmaformnotify_email plg_dharmaformnotify_telegram plg_dharmaformnotify_max)
+EXTENSIONS=(com_dharmaform plg_system_dharmaform plg_task_dharmaform plg_dharmashop_dharmaform plg_dharmaformnotify_email plg_dharmaformnotify_telegram plg_dharmaformnotify_max)
 
 for ext in "${EXTENSIONS[@]}"; do
   (cd "$ext" && zip -r -q "$stage/$ext.zip" . -x '*.DS_Store')

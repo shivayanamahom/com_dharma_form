@@ -33,9 +33,21 @@ class FormModel extends AdminModel
         return parent::getTable($name, $prefix, $options);
     }
 
+    /** Параметры формы, которые меняет только администратор компонента (`core.admin`). */
+    private const RESTRICTED_PARAMS = ['notify_emails', 'notify_chats', 'notify_max_chats', 'retention_days'];
+
     public function getForm($data = [], $loadData = true)
     {
-        return $this->loadForm('com_dharmaform.form', 'form', ['control' => 'jform', 'load_data' => $loadData]) ?: false;
+        $form = $this->loadForm('com_dharmaform.form', 'form', ['control' => 'jform', 'load_data' => $loadData]) ?: false;
+
+        if ($form && !$this->getCurrentUser()->authorise('core.admin', 'com_dharmaform')) {
+            foreach (self::RESTRICTED_PARAMS as $key) {
+                $form->setFieldAttribute($key, 'disabled', 'true', 'params');
+                $form->setFieldAttribute($key, 'filter', 'unset', 'params');
+            }
+        }
+
+        return $form;
     }
 
     protected function loadFormData()
@@ -62,8 +74,10 @@ class FormModel extends AdminModel
         $fields       = \is_string($item->fields ?? null) && $item->fields !== '' ? json_decode($item->fields, true) : [];
         $item->fields = \is_array($fields) ? array_values($fields) : [];
 
-        $params = \is_string($item->params ?? null) && $item->params !== '' ? json_decode($item->params, true) : [];
-        $params = \is_array($params) ? $params : [];
+        // AdminModel уже превращает `params` в массив; строку JSON принимаем на случай, если родитель этого не сделал.
+        $params = $item->params ?? [];
+        $params = \is_string($params) && $params !== '' ? json_decode($params, true) : $params;
+        $params = array_merge(FormConfig::DEFAULTS, \is_array($params) ? $params : []);
 
         // Получатели каналов хранятся строкой, поля выбора ждут список.
         foreach (['notify_chats', 'notify_max_chats'] as $key) {
@@ -96,8 +110,23 @@ class FormModel extends AdminModel
             return false;
         }
 
+        $params = isset($data['params']) && \is_array($data['params']) ? $data['params'] : [];
+
+        // Получатели уведомлений и срок хранения определяют, куда уходят и сколько живут персональные данные: менять их может только администратор компонента.
+        if (!$this->getCurrentUser()->authorise('core.admin', 'com_dharmaform')) {
+            $stored = !empty($data['id']) ? (array) ($this->getItem((int) $data['id'])->params ?? []) : [];
+
+            foreach (self::RESTRICTED_PARAMS as $key) {
+                unset($params[$key]);
+
+                if (isset($stored[$key])) {
+                    $params[$key] = $stored[$key];
+                }
+            }
+        }
+
         $data['fields'] = json_encode($fields, JSON_UNESCAPED_UNICODE);
-        $data['params'] = json_encode(FormNormalizer::params(isset($data['params']) && \is_array($data['params']) ? $data['params'] : []), JSON_UNESCAPED_UNICODE);
+        $data['params'] = json_encode(FormNormalizer::params($params), JSON_UNESCAPED_UNICODE);
 
         if (!parent::save($data)) {
             return false;

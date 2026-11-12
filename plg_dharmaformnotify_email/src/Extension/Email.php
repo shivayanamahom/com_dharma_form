@@ -44,13 +44,16 @@ final class Email extends CMSPlugin implements SubscriberInterface
         $settings = $event->getArgument('settings');
         $message  = $event->getArgument('notification');
 
-        if (!$settings instanceof Registry || !$message instanceof SubmissionNotification || !(int) $settings->get('notify_email_enabled', 0)) {
+        $test = (bool) $event->getArgument('test', false);
+        $only = (string) $event->getArgument('only', '');
+
+        if (!$settings instanceof Registry || !$message instanceof SubmissionNotification || ($only !== '' && $only !== 'email') || (!$test && !(int) $settings->get('notify_email_enabled', 0))) {
             return;
         }
 
         $channels = (array) ($message->form['params']['notify_channels'] ?? []);
 
-        if ($channels && !\in_array('email', $channels, true)) {
+        if (!$test && $channels && !\in_array('email', $channels, true)) {
             return;
         }
 
@@ -58,6 +61,10 @@ final class Email extends CMSPlugin implements SubscriberInterface
 
         if (!$recipients) {
             Log::add('Submission ' . $message->submissionId . ': no email recipients', Log::WARNING, 'com_dharmaform');
+
+            if ($test) {
+                SubmissionNotificationService::report($event, 'email', 'email_no_recipients');
+            }
 
             return;
         }
@@ -71,7 +78,7 @@ final class Email extends CMSPlugin implements SubscriberInterface
         $html     = $message->html((string) (Factory::getApplication()->get('sitename') ?: 'Сайт'));
 
         foreach ($recipients as $email) {
-            $deliveryId = $service->claim($message, 'email', $email, $retry);
+            $deliveryId = $test ? 0 : $service->claim($message, 'email', $email, $retry);
 
             if ($deliveryId === null) {
                 continue;
@@ -108,7 +115,11 @@ final class Email extends CMSPlugin implements SubscriberInterface
                 Log::add('Email delivery ' . $deliveryId . ' failed: ' . $error, Log::ERROR, 'com_dharmaform');
             }
 
-            $service->finish($deliveryId, $sent, $error);
+            if ($test) {
+                SubmissionNotificationService::report($event, 'email:' . $email, $sent ? 'ok' : $error);
+            } else {
+                $service->finish($deliveryId, $sent, $error);
+            }
         }
     }
 

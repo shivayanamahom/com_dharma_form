@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Dharma\Component\DharmaForm\Administrator\Controller;
 
+use Dharma\Component\DharmaForm\Administrator\Helper\VisitorMeta;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\AdminController;
 use Joomla\CMS\Router\Route;
@@ -79,10 +80,10 @@ class SubmissionsController extends AdminController
 
         /** @var \Dharma\Component\DharmaForm\Administrator\Model\SubmissionsModel $model */
         $model = $this->getModel('Submissions', 'Administrator', ['ignore_request' => false]);
-        $db    = $model->getDatabase();
+        $db    = $model->getExportDatabase();
         $query = $model->getExportQuery();
 
-        $query->clear('select')->select($db->quoteName(['a.id', 'a.created', 'a.name', 'a.phone', 'a.email', 'a.message', 'a.fields', 'a.page_url', 'a.is_spam', 'a.spam_score', 'a.spam_reason']))
+        $query->clear('select')->select($db->quoteName(['a.id', 'a.created', 'a.name', 'a.phone', 'a.email', 'a.message', 'a.fields', 'a.page_url', 'a.is_spam', 'a.spam_score', 'a.spam_reason', 'a.meta']))
             ->select($db->quoteName('f.title', 'form_title'));
 
         $decode = static fn (mixed $json): array => \is_string($json) && $json !== '' ? (json_decode($json, true) ?: []) : [];
@@ -125,7 +126,7 @@ class SubmissionsController extends AdminController
         fputcsv($out, array_merge(
             [Text::_('COM_DHARMAFORM_CSV_ID'), Text::_('COM_DHARMAFORM_CSV_CREATED'), Text::_('COM_DHARMAFORM_CSV_FORM'), Text::_('COM_DHARMAFORM_CSV_NAME'), Text::_('COM_DHARMAFORM_CSV_PHONE'), Text::_('COM_DHARMAFORM_CSV_EMAIL'), Text::_('COM_DHARMAFORM_CSV_MESSAGE')],
             array_map($cell, $labels),
-            [Text::_('COM_DHARMAFORM_CSV_PAGE'), Text::_('COM_DHARMAFORM_CSV_SPAM'), Text::_('COM_DHARMAFORM_CSV_SPAM_SCORE'), Text::_('COM_DHARMAFORM_CSV_SPAM_REASON')]
+            [Text::_('COM_DHARMAFORM_CSV_PAGE'), Text::_('COM_DHARMAFORM_CSV_SPAM'), Text::_('COM_DHARMAFORM_CSV_SPAM_SCORE'), Text::_('COM_DHARMAFORM_CSV_SPAM_REASON'), Text::_('COM_DHARMAFORM_CSV_VISITOR')]
         ), ';', '"', '\\');
 
         foreach ($db->setQuery($query)->getIterator() as $row) {
@@ -140,6 +141,8 @@ class SubmissionsController extends AdminController
             $line[] = $row->is_spam ? Text::_('JYES') : Text::_('JNO');
             $line[] = (int) $row->spam_score;
             $line[] = $cell($row->spam_reason);
+            $pairs  = VisitorMeta::pairs($decode($row->meta));
+            $line[] = $cell(implode('; ', array_map(static fn (string $k, string $v): string => $k . ': ' . $v, array_keys($pairs), $pairs)));
             fputcsv($out, $line, ';', '"', '\\');
         }
 
