@@ -58,6 +58,7 @@ jobs:
               ("description", "Dharma Form — универсальные формы для Joomla 5.2+ и 6+"),
               ("element", "pkg_dharmaform"),
               ("type", "package"),
+              ("client", "site"),
               ("version", version),
           ):
               ET.SubElement(update, tag).text = value

@@ -5,6 +5,7 @@
 		<description>Dharma Form — универсальные формы для Joomla 5.2+ и 6+</description>
 		<element>pkg_dharmaform</element>
 		<type>package</type>
+		<client>site</client>
 		<version>0.1.2</version>
 		<infourl title="Dharma Form v0.1.2">https://github.com/shivayanamahom/com_dharma_form/releases/tag/v0.1.2</infourl>
 		<downloads>
@@ -20,6 +21,7 @@
 		<description>Dharma Form — универсальные формы для Joomla 5.2+ и 6+</description>
 		<element>pkg_dharmaform</element>
 		<type>package</type>
+		<client>site</client>
 		<version>0.1.1</version>
 		<infourl title="Dharma Form v0.1.1">https://github.com/shivayanamahom/com_dharma_form/releases/tag/v0.1.1</infourl>
 		<downloads>
@@ -35,6 +37,7 @@
 		<description>Dharma Form — универсальные формы для Joomla 5.2+ и 6</description>
 		<element>pkg_dharmaform</element>
 		<type>package</type>
+		<client>site</client>
 		<version>0.1.0</version>
 		<infourl title="Dharma Form v0.1.0">https://github.com/shivayanamahom/com_dharma_form/releases/tag/v0.1.0</infourl>
 		<downloads>
