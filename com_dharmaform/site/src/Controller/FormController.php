@@ -19,6 +19,7 @@ use Dharma\Component\DharmaForm\Site\Helper\FormMarkup;
 use Dharma\Component\DharmaForm\Site\Service\ClientIp;
 use Dharma\Component\DharmaForm\Site\Service\FormService;
 use Dharma\Component\DharmaForm\Site\Service\FormSubmission;
+use Dharma\Component\DharmaForm\Site\Service\RequestThrottle;
 use Dharma\Component\DharmaForm\Site\Service\SubmissionGuard;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
@@ -41,6 +42,20 @@ class FormController extends BaseController
 
     public function render(): void
     {
+        $address = ClientIp::bucket(ClientIp::get($this->app->getInput()->server));
+        try {
+            $allowed = RequestThrottle::allow('render:all', 600, 60)
+                && RequestThrottle::allow('render:ip:' . $address, 60, 60);
+        } catch (\Throwable) {
+            http_response_code(503);
+            $this->json(false, Text::_('COM_DHARMAFORM_FORM_ERROR_TEMPORARY'));
+        }
+        if (!$allowed) {
+            http_response_code(429);
+            $this->app->setHeader('Retry-After', '60', true);
+            $this->json(false, Text::_('COM_DHARMAFORM_FORM_ERROR_RATE'));
+        }
+
         $form = (new FormService())->byCode($this->app->getInput()->get->getString('code', ''));
 
         if (!$form) {

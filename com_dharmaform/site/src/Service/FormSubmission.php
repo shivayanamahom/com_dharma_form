@@ -49,6 +49,16 @@ final class FormSubmission
     public function submit(array $form, array $input, string $ip): array
     {
         $params  = $form['params'];
+        if (!SubmissionGuard::envelopeOk($input, $params)) {
+            return $this->fail(Text::_('COM_DHARMAFORM_FORM_ERROR_REFRESH'));
+        }
+        $ipHash = SubmissionGuard::ipHash(ClientIp::bucket($ip));
+        $limit = (int) $params['protect_rate_limit'];
+        $recent = $limit > 0 ? $this->recent($ipHash) : 0;
+        if ($limit > 0 && $recent >= $limit * 3) {
+            return $this->fail(Text::_('COM_DHARMAFORM_FORM_ERROR_RATE'));
+        }
+
         $values  = (array) ($input['f'] ?? []);
         $files   = (array) ($input['files'] ?? []);
         $errors  = [];
@@ -110,25 +120,30 @@ final class FormSubmission
             return ['ok' => false, 'error' => '', 'errors' => $errors, 'spam' => false, 'submission_id' => 0];
         }
 
-        $ipHash  = SubmissionGuard::ipHash(ClientIp::bucket($ip));
-        $limit   = (int) $params['protect_rate_limit'];
         $contact = [$main['phone'], $main['email']];
-        $recent  = $limit > 0 ? $this->recent($ipHash) : 0;
-
-        // Намного больше лимита — явная атака: ничего не записываем и не рассылаем, а ответ тот же «принято».
-        if ($limit > 0 && $recent >= $limit * 3) {
-            return ['ok' => true, 'error' => '', 'errors' => [], 'spam' => true, 'submission_id' => 0];
-        }
-
         if ($this->isDuplicate((int) $form['id'], $contact, $data)) {
             return $this->fail(Text::_('COM_DHARMAFORM_FORM_ERROR_DUPLICATE'));
+        }
+
+        try {
+            if ($limit > 0 && !RequestThrottle::allow('submit:ip:' . $ipHash, $limit * 3, 3600)) {
+                return $this->fail(Text::_('COM_DHARMAFORM_FORM_ERROR_RATE'));
+            }
+            $flood = (int) ($params['protect_flood_limit'] ?? 0);
+            if ($flood > 0 && !RequestThrottle::allow('submit:form:' . (int) $form['id'], $flood, 600)) {
+                return $this->fail(Text::_('COM_DHARMAFORM_FORM_ERROR_RATE'));
+            }
+            if (!empty($params['protect_replay']) && !SubmissionGuard::consumeStamp((string) $input['stamp'])) {
+                return $this->fail(Text::_('COM_DHARMAFORM_FORM_ERROR_DUPLICATE'));
+            }
+        } catch (\Throwable) {
+            return $this->fail(Text::_('COM_DHARMAFORM_FORM_ERROR_TEMPORARY'));
         }
 
         $verdict = SubmissionGuard::inspect($input, $params, [
             'text'        => implode(' ', $data),
             'email'       => $main['email'],
             'ip'          => $ip,
-            'recent_form' => $this->recentForm((int) $form['id']),
             'rate_hit'    => $limit > 0 && $recent >= $limit,
         ]);
         $spam    = $verdict['spam'];
@@ -360,17 +375,6 @@ final class FormSubmission
         return (int) $db->setQuery(
             'SELECT COUNT(*) FROM ' . $db->quoteName('#__dharmaform_submissions')
             . ' WHERE ip_hash = ' . $db->quote($ipHash) . ' AND created >= ' . $db->quote(Factory::getDate('-1 hour')->toSql())
-        )->loadResult();
-    }
-
-    /** Заявки этой формы за последние десять минут (лавина с разных адресов). */
-    private function recentForm(int $formId): int
-    {
-        $db = $this->db;
-
-        return (int) $db->setQuery(
-            'SELECT COUNT(*) FROM ' . $db->quoteName('#__dharmaform_submissions')
-            . ' WHERE form_id = ' . $formId . ' AND created >= ' . $db->quote(Factory::getDate('-10 minutes')->toSql())
         )->loadResult();
     }
 

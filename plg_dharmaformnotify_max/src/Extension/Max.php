@@ -151,14 +151,7 @@ final class Max extends CMSPlugin implements SubscriberInterface
     private function send(string $token, string $recipient, string $text, string $ca): void
     {
         $request = self::buildRequest($token, $recipient, $text);
-        $options = ['timeout' => 8];
-
-        // Серверы MAX используют сертификат Минцифры: если он не входит в системные, укажите файл сертификатов в настройках.
-        if ($ca !== '' && is_file($ca)) {
-            $options['transport.curl'] = [CURLOPT_CAINFO => $ca];
-        }
-
-        $response = Http::post($request['url'], $request['body'], $request['headers'], 8, $options);
+        $response = Http::post($request['url'], $request['body'], $request['headers'], 8, Http::certificateOptions($ca));
         $result   = json_decode((string) $response->body, true);
 
         if ((int) $response->code < 200 || (int) $response->code >= 300 || !\is_array($result) || !isset($result['message'])) {

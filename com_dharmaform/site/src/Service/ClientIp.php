@@ -19,8 +19,7 @@ use Joomla\Input\Input;
 
 /**
  * Адрес посетителя для ограничения частоты и защиты. По умолчанию только `REMOTE_ADDR`: заголовки вроде `X-Forwarded-For`
- * посетитель может подделать сам. Если сайт стоит за прокси или CDN (Cloudflare), в настройках компонента выбирается
- * заголовок, который этот прокси ставит и перезаписывает; иначе все посетители выглядели бы одним адресом прокси.
+ * посетитель может подделать сам. Заголовки учитываются только от настроенных доверенных прокси.
  */
 final class ClientIp
 {
@@ -47,18 +46,35 @@ final class ClientIp
     public static function get(Input $server): string
     {
         $remote = (string) $server->getString('REMOTE_ADDR', '');
-        $source = (string) ComponentHelper::getParams('com_dharmaform')->get('ip_source', 'remote_addr');
-        $key    = self::SOURCES[$source] ?? 'REMOTE_ADDR';
+        if (!filter_var($remote, FILTER_VALIDATE_IP)) {
+            return '';
+        }
 
-        if ($key === 'REMOTE_ADDR') {
-            return filter_var($remote, FILTER_VALIDATE_IP) ? $remote : '';
+        $params = ComponentHelper::getParams('com_dharmaform');
+        $source = (string) $params->get('ip_source', 'remote_addr');
+        $key    = self::SOURCES[$source] ?? 'REMOTE_ADDR';
+        $trusted = (string) $params->get('trusted_proxies', '');
+
+        if ($key === 'REMOTE_ADDR' || !SubmissionGuard::ipInList($remote, $trusted)) {
+            return $remote;
         }
 
         $value = trim((string) $server->getString($key, ''));
+        if ($source !== 'forwarded_for') {
+            return filter_var($value, FILTER_VALIDATE_IP) ? $value : $remote;
+        }
 
-        // В цепочке прокси клиент — первый адрес.
-        $value = trim(explode(',', $value)[0]);
+        // Доверенные прокси добавляют предыдущий узел справа. Всё левее первого недоверенного узла игнорируем.
+        foreach (array_reverse(explode(',', $value)) as $hop) {
+            $hop = trim($hop);
+            if (!filter_var($hop, FILTER_VALIDATE_IP)) {
+                return $remote;
+            }
+            if (!SubmissionGuard::ipInList($hop, $trusted)) {
+                return $hop;
+            }
+        }
 
-        return filter_var($value, FILTER_VALIDATE_IP) ? $value : (filter_var($remote, FILTER_VALIDATE_IP) ? $remote : '');
+        return $remote;
     }
 }

@@ -27,7 +27,7 @@ class NotifytestField extends FormField
     protected function getInput(): string
     {
         $channel = (string) ($this->element['channel'] ?? '');
-        $url     = 'index.php?option=com_dharmaform&task=notify.test&format=json&channel=' . rawurlencode($channel) . '&' . Session::getFormToken() . '=1';
+        $url     = 'index.php?option=com_dharmaform&task=notify.test&format=json';
 
         $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
 
@@ -35,7 +35,8 @@ class NotifytestField extends FormField
         $wa->getRegistry()->addExtensionRegistryFile('com_dharmaform');
         $wa->useScript('com_dharmaform.notify-test');
 
-        return '<button type="button" class="btn btn-outline-primary" data-dharmaform-test data-url="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '">'
+        return '<button type="button" class="btn btn-outline-primary" data-dharmaform-test data-url="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '"'
+            . ' data-channel="' . htmlspecialchars($channel, ENT_QUOTES, 'UTF-8') . '" data-token="' . Session::getFormToken() . '">'
             . '<span class="icon-paper-plane" aria-hidden="true"></span> ' . Text::_('COM_DHARMAFORM_TEST_BUTTON') . '</button>'
             . '<div class="form-text" data-dharmaform-test-result role="status" aria-live="polite"></div>';
     }

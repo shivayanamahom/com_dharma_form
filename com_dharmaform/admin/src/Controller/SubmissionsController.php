@@ -74,7 +74,9 @@ class SubmissionsController extends AdminController
 
         $user = $this->app->getIdentity();
 
-        if (!$user->authorise('submission.export', 'com_dharmaform')) {
+        if (!$user->authorise('core.manage', 'com_dharmaform')
+            || !$user->authorise('submission.view', 'com_dharmaform')
+            || !$user->authorise('submission.export', 'com_dharmaform')) {
             throw new \RuntimeException(Text::_('JERROR_ALERTNOAUTHOR'), 403);
         }
 
@@ -118,7 +120,7 @@ class SubmissionsController extends AdminController
         $cell = static function (mixed $value): string {
             $text = str_replace(["\r\n", "\r"], "\n", (string) $value);
 
-            return $text !== '' && strpbrk($text[0], "=+-@\t") !== false ? "'" . $text : $text;
+            return preg_match('~^\s*(?:[=+@\-]|[\t\n])~u', $text) ? "'" . $text : $text;
         };
 
         $out = fopen('php://output', 'w');
@@ -127,7 +129,7 @@ class SubmissionsController extends AdminController
             [Text::_('COM_DHARMAFORM_CSV_ID'), Text::_('COM_DHARMAFORM_CSV_CREATED'), Text::_('COM_DHARMAFORM_CSV_FORM'), Text::_('COM_DHARMAFORM_CSV_NAME'), Text::_('COM_DHARMAFORM_CSV_PHONE'), Text::_('COM_DHARMAFORM_CSV_EMAIL'), Text::_('COM_DHARMAFORM_CSV_MESSAGE')],
             array_map($cell, $labels),
             [Text::_('COM_DHARMAFORM_CSV_PAGE'), Text::_('COM_DHARMAFORM_CSV_SPAM'), Text::_('COM_DHARMAFORM_CSV_SPAM_SCORE'), Text::_('COM_DHARMAFORM_CSV_SPAM_REASON'), Text::_('COM_DHARMAFORM_CSV_VISITOR')]
-        ), ';', '"', '\\');
+        ), ';', '"', '');
 
         foreach ($db->setQuery($query)->getIterator() as $row) {
             $values = $extra($row);
@@ -143,7 +145,7 @@ class SubmissionsController extends AdminController
             $line[] = $cell($row->spam_reason);
             $pairs  = VisitorMeta::pairs($decode($row->meta));
             $line[] = $cell(implode('; ', array_map(static fn (string $k, string $v): string => $k . ': ' . $v, array_keys($pairs), $pairs)));
-            fputcsv($out, $line, ';', '"', '\\');
+            fputcsv($out, $line, ';', '"', '');
         }
 
         fclose($out);

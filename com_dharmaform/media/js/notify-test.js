@@ -20,7 +20,8 @@ document.addEventListener('click', (event) => {
     button.disabled = true;
     box.textContent = '…';
 
-    fetch(button.dataset.url, { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+    const body = new URLSearchParams({ channel: button.dataset.channel, [button.dataset.token]: '1' });
+    fetch(button.dataset.url, { method: 'POST', body, headers: { Accept: 'application/json' }, credentials: 'same-origin' })
         .then((r) => r.json())
         .then((json) => show(json.success ? json.data.items : [{ ok: false, to: '', text: json.message || 'Error' }]))
         .catch(() => show([{ ok: false, to: '', text: 'Network error' }]))

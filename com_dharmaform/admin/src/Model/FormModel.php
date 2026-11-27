@@ -34,7 +34,10 @@ class FormModel extends AdminModel
     }
 
     /** Параметры формы, которые меняет только администратор компонента (`core.admin`). */
-    private const RESTRICTED_PARAMS = ['notify_emails', 'notify_chats', 'notify_max_chats', 'retention_days'];
+    private const RESTRICTED_PARAMS = [
+        'notify_emails', 'notify_chats', 'notify_max_chats', 'notify_channels', 'notify_subject',
+        'retention_days', 'after_action', 'success_redirect', 'consent_url',
+    ];
 
     public function getForm($data = [], $loadData = true)
     {

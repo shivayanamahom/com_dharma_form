@@ -64,11 +64,17 @@ final class FormSanitizer
     {
         $url = self::url($url);
 
-        if ($url === '' || !preg_match('~^https?://([^\s/:]+)~i', $url, $m)) {
-            return str_starts_with($url, '/') || str_starts_with($url, '#') ? $url : '';
+        if (str_starts_with($url, '/') || str_starts_with($url, '#')) {
+            return $url;
         }
 
-        $host = strtolower(preg_replace('/^www\./i', '', $m[1]) ?? '');
+        $parts = parse_url($url);
+        if (!$parts || !in_array(strtolower($parts['scheme'] ?? ''), ['http', 'https'], true)
+            || !isset($parts['host']) || isset($parts['user']) || isset($parts['pass'])) {
+            return '';
+        }
+
+        $host = strtolower(preg_replace('/^www\./i', '', $parts['host']) ?? '');
         $own  = \Dharma\Component\DharmaForm\Administrator\Service\SiteUrl::host();
 
         return $host !== '' && $host === $own ? $url : '';

@@ -65,15 +65,10 @@ class MaxchatsField extends ListField
             return self::$cache[$key];
         }
 
-        $chats   = [];
-        $options = ['timeout' => 4];
-
-        if ($ca !== '' && is_file($ca)) {
-            $options['transport.curl'] = [CURLOPT_CAINFO => $ca];
-        }
+        $chats = [];
 
         try {
-            $response = Http::get(self::API . '/updates?limit=100&timeout=0', ['Authorization' => $token, 'Accept' => 'application/json'], 4, $options);
+            $response = Http::get(self::API . '/updates?limit=100&timeout=0', ['Authorization' => $token, 'Accept' => 'application/json'], 4, Http::certificateOptions($ca));
             $payload  = json_decode((string) $response->body, true);
 
             foreach (\is_array($payload) ? ($payload['updates'] ?? []) : [] as $update) {

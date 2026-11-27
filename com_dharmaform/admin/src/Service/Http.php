@@ -44,22 +44,37 @@ final class Http
     {
         $call = static fn (object $http): object => $method === 'post' ? $http->post($url, $body, $headers, $timeout) : $http->get($url, $headers, $timeout);
 
-        if (!self::streamPreferred()) {
-            $options['timeout']        = $timeout;
-            $options['transport.curl'] = ((array) ($options['transport.curl'] ?? [])) + [CURLOPT_CONNECTTIMEOUT => min(4, $timeout)];
+        $options['timeout'] = $timeout;
+        $host = (string) parse_url($url, PHP_URL_HOST);
+        $cacheKey = 'stream-' . hash('sha256', strtolower($host));
 
+        if (defined('CURLOPT_CONNECTTIMEOUT') && !self::streamPreferred($cacheKey)) {
             try {
-                return $call(HttpFactory::getHttp($options));
+                return $call(HttpFactory::getHttp($options + ['transport.curl' => [CURLOPT_CONNECTTIMEOUT => min(4, $timeout)]], ['curl']));
             } catch (\RuntimeException $e) {
-                if (!preg_match('~resolv|could not connect|timed out|connection~i', $e->getMessage())) {
+                // Повторяем POST только при сбое DNS/подключения до начала отправки запроса.
+                if (!preg_match('~resolv|failed to connect to|could not connect to~i', $e->getMessage())) {
                     throw $e;
                 }
 
-                self::rememberStream();
+                self::rememberStream($cacheKey);
             }
         }
 
-        return $call(HttpFactory::getHttp(['timeout' => $timeout], ['stream']));
+        return $call(HttpFactory::getHttp($options, ['stream']));
+    }
+
+    /** @return array<string, string> */
+    public static function certificateOptions(string $ca): array
+    {
+        if ($ca === '') {
+            return [];
+        }
+        if (!is_file($ca) || !is_readable($ca)) {
+            throw new \RuntimeException('max_invalid_ca_bundle');
+        }
+
+        return ['curl.certpath' => $ca, 'stream.certpath' => $ca];
     }
 
     private static function cache(): object
@@ -67,19 +82,19 @@ final class Http
         return Factory::getContainer()->get(CacheControllerFactoryInterface::class)->createCacheController('output', ['defaultgroup' => self::GROUP, 'caching' => true, 'lifetime' => 60]);
     }
 
-    private static function streamPreferred(): bool
+    private static function streamPreferred(string $key): bool
     {
         try {
-            return self::cache()->contains('stream');
+            return self::cache()->contains($key);
         } catch (\Throwable) {
             return false;
         }
     }
 
-    private static function rememberStream(): void
+    private static function rememberStream(string $key): void
     {
         try {
-            self::cache()->store('1', 'stream');
+            self::cache()->store('1', $key);
         } catch (\Throwable) {
             // Без кэша каждый запрос сначала пробует curl.
         }

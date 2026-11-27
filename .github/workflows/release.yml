@@ -68,7 +68,7 @@ jobs:
           ET.SubElement(update, "sha256").text = checksum
           ET.SubElement(update, "maintainer").text = "Dharma Design"
           ET.SubElement(update, "maintainerurl").text = "https://github.com/shivayanamahom"
-          ET.SubElement(update, "targetplatform", {"name": "joomla", "version": "((5|6)\\..*)"})
+          ET.SubElement(update, "targetplatform", {"name": "joomla", "version": r"((5\.([2-9]|\d{2,})|6)\..*)"})
 
           ET.indent(root, space="\t")
           tree.write("updates.xml", encoding="utf-8", xml_declaration=True)

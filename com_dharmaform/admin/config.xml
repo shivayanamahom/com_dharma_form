@@ -13,7 +13,7 @@
 			<option value="1">JYES</option>
 		</field>
 		<field name="upload_dir" type="text" label="COM_DHARMAFORM_SETTING_UPLOAD_DIR_LABEL" description="COM_DHARMAFORM_SETTING_UPLOAD_DIR_DESC" default="files/dharmaform" maxlength="255" filter="string" />
-		<field name="upload_allowed" type="textarea" label="COM_DHARMAFORM_SETTING_UPLOAD_ALLOWED_LABEL" description="COM_DHARMAFORM_SETTING_UPLOAD_ALLOWED_DESC" default="jpg, jpeg, png, gif, webp, pdf, docx, xlsx, pptx, odt, ods, txt, csv" rows="3" filter="string" />
+		<field name="upload_allowed" type="textarea" label="COM_DHARMAFORM_SETTING_UPLOAD_ALLOWED_LABEL" description="COM_DHARMAFORM_SETTING_UPLOAD_ALLOWED_DESC" default="jpg, jpeg, png, gif, webp, pdf, docx, xlsx, pptx, odt, ods" rows="3" filter="string" />
 		<field name="retention_days" type="number" label="COM_DHARMAFORM_SETTING_RETENTION_DAYS_LABEL" description="COM_DHARMAFORM_SETTING_RETENTION_DAYS_DESC" default="365" min="0" max="3650" filter="integer" />
 		<field name="retention_spam_days" type="number" label="COM_DHARMAFORM_SETTING_RETENTION_SPAM_LABEL" description="COM_DHARMAFORM_SETTING_RETENTION_SPAM_DESC" default="30" min="0" max="3650" filter="integer" />
 		<field name="collect_note" type="note" label="COM_DHARMAFORM_SETTING_COLLECT_TITLE" description="COM_DHARMAFORM_SETTING_COLLECT_NOTE" class="alert alert-info" />
@@ -68,7 +68,7 @@
 			<option value="0">JNO</option>
 			<option value="1">JYES</option>
 		</field>
-		<field name="notify_email_attach" type="radio" label="COM_DHARMAFORM_SETTING_NOTIFY_EMAIL_ATTACH_LABEL" description="COM_DHARMAFORM_SETTING_NOTIFY_EMAIL_ATTACH_DESC" layout="joomla.form.field.radio.switcher" default="1" filter="integer" showon="notify_email_enabled:1">
+		<field name="notify_email_attach" type="radio" label="COM_DHARMAFORM_SETTING_NOTIFY_EMAIL_ATTACH_LABEL" description="COM_DHARMAFORM_SETTING_NOTIFY_EMAIL_ATTACH_DESC" layout="joomla.form.field.radio.switcher" default="0" filter="integer" showon="notify_email_enabled:1">
 			<option value="0">JNO</option>
 			<option value="1">JYES</option>
 		</field>
@@ -108,6 +108,7 @@
 			<option value="real_ip">COM_DHARMAFORM_SETTING_IP_SOURCE_REAL</option>
 			<option value="forwarded_for">COM_DHARMAFORM_SETTING_IP_SOURCE_XFF</option>
 		</field>
+		<field name="trusted_proxies" type="textarea" label="COM_DHARMAFORM_SETTING_TRUSTED_PROXIES_LABEL" description="COM_DHARMAFORM_SETTING_TRUSTED_PROXIES_DESC" rows="4" filter="string" />
 		<field name="spam_ip_whitelist" type="textarea" label="COM_DHARMAFORM_SETTING_SPAM_IP_WHITELIST_LABEL" description="COM_DHARMAFORM_SETTING_SPAM_IP_WHITELIST_DESC" rows="4" hint="203.0.113.7&#10;198.51.100.0/24" filter="string" />
 		<field name="spam_ip_blacklist" type="textarea" label="COM_DHARMAFORM_SETTING_SPAM_IP_BLACKLIST_LABEL" description="COM_DHARMAFORM_SETTING_SPAM_IP_BLACKLIST_DESC" rows="4" hint="192.0.2.15&#10;2001:db8::/32" filter="string" />
 		<field name="spam_stopwords" type="textarea" label="COM_DHARMAFORM_SETTING_SPAM_STOPWORDS_LABEL" description="COM_DHARMAFORM_SETTING_SPAM_STOPWORDS_DESC" rows="4" filter="string" />

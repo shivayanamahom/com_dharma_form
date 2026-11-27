@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Dharma\Component\DharmaForm\Administrator\Notification;
 
+use Dharma\Component\DharmaForm\Administrator\Forms\FormSanitizer;
 use Dharma\Component\DharmaForm\Administrator\Helper\VisitorMeta;
 
 \defined('_JEXEC') or die;
@@ -139,9 +140,10 @@ final class SubmissionNotification
             }
         }
 
-        if (!empty($this->submission['page_url'])) {
+        $url = FormSanitizer::pageUrl((string) ($this->submission['page_url'] ?? ''));
+        if ($url !== '') {
             $lines[] = '';
-            $lines[] = 'Страница: ' . $this->submission['page_url'];
+            $lines[] = 'Страница: ' . $url;
         }
 
         if ($details && ($meta = VisitorMeta::pairs((array) ($this->submission['meta'] ?? [])))) {
@@ -211,8 +213,8 @@ final class SubmissionNotification
             $parts[] = '<div style="margin:16px 0 0;padding:14px 16px;background:#f3f4f6;border-left:4px solid ' . $button . ';border-radius:0 6px 6px 0;font-size:15px;line-height:1.55;color:#212529;">' . nl2br($e($message)) . '</div>';
         }
 
-        if (!empty($this->submission['page_url'])) {
-            $url     = (string) $this->submission['page_url'];
+        $url = FormSanitizer::pageUrl((string) ($this->submission['page_url'] ?? ''));
+        if ($url !== '') {
             $parts[] = '<p style="margin:16px 0 0;font-size:13px;color:' . $muted . ';">Страница: <a href="' . $e($url) . '" style="color:' . $accent . ';">' . $e(mb_strlen($url) > 70 ? mb_substr($url, 0, 67) . '…' : $url) . '</a></p>';
         }
 

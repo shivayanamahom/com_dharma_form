@@ -20,8 +20,7 @@ use Joomla\CMS\Factory;
 /**
  * Защита приёма: несколько независимых слабых сигналов складываются в оценку (балл), заявка с оценкой не ниже порога
  * (`protect_score_limit`) помечается спамом — не отклоняется: посетитель видит обычное «принято», заявка остаётся в журнале.
- * Мгновенные признаки бота (ловушка, чужая метка, повтор метки, адрес из чёрного списка, нерешённая proof-of-work) дают
- * сразу максимум. Всё работает на своём сервере: без внешних капч и сторонних запросов.
+ * Проверка метки, ловушки и proof-of-work предшествует проверке полей. Оценка применяется к принятым запросам.
  *
  * Сигналы: поле-ловушка (постоянное и случайное по метке), подписанная метка времени с одноразовым номером, слишком быстрая
  * отправка, proof-of-work (невидимая «капча»: браузер подбирает число, от которого хеш метки начинается с нулевых бит),
@@ -71,12 +70,31 @@ final class SubmissionGuard
         return hash_hmac('sha256', $ip, self::secret());
     }
 
+    public static function envelopeOk(array $data, array $params): bool
+    {
+        $stamp = (string) ($data['stamp'] ?? '');
+        if (!preg_match('~^([0-9]{1,12})\.([a-f0-9]{12})\.([a-f0-9]{64})$~D', $stamp, $parts)) {
+            return false;
+        }
+        [, $time, $nonce, $sign] = $parts;
+        $age = time() - (int) $time;
+        if ($age > self::MAX_AGE || $age < -60 || !hash_equals(hash_hmac('sha256', $time . '.' . $nonce, self::secret()), $sign)) {
+            return false;
+        }
+        if (!empty($params['protect_honeypot'])
+            && (trim((string) ($data['website'] ?? '')) !== '' || trim((string) ($data[self::honeypotName($stamp)] ?? '')) !== '')) {
+            return false;
+        }
+
+        return empty($params['protect_pow']) || self::powValid($stamp, (string) ($data['pow'] ?? ''), (int) ($params['protect_pow_bits'] ?? 14));
+    }
+
     /**
      * Осмотр присланного.
      *
      * @param array<string, mixed> $data   `website`, `hp_*` (ловушки), `stamp`, `pow`, `dfh` (присутствие человека)
      * @param array<string, mixed> $params настройки формы (`FormConfig::DEFAULTS`)
-     * @param array<string, string> $extra  `text` (все значения полей одной строкой), `email`, `ip`, `form_id`, `recent_form` (заявок на форму за 10 минут)
+     * @param array<string, mixed> $extra  `text`, `email`, `ip`, `rate_hit`
      *
      * @return array{spam: bool, score: int, reasons: string[]}
      */
@@ -101,33 +119,10 @@ final class SubmissionGuard
             $add('blacklist', self::INSTANT);
         }
 
-        if (!empty($params['protect_honeypot'])) {
-            $trap = trim((string) ($data['website'] ?? ''));
-            $name = self::honeypotName((string) ($data['stamp'] ?? ''));
-
-            if ($trap !== '' || trim((string) ($data[$name] ?? '')) !== '') {
-                $add('honeypot', self::INSTANT);
-            }
-        }
-
-        $parts = array_pad(explode('.', (string) ($data['stamp'] ?? ''), 3), 3, '');
-        [$time, $nonce, $sign] = $parts;
+        [$time] = explode('.', (string) ($data['stamp'] ?? ''), 2);
         $age = time() - (int) $time;
-
-        if (!ctype_digit($time) || $nonce === '' || !hash_equals(hash_hmac('sha256', $time . '.' . $nonce, self::secret()), $sign) || $age > self::MAX_AGE) {
-            $add('stamp', self::INSTANT);
-        } else {
-            if (!empty($params['protect_replay']) && !self::useNonce($nonce)) {
-                $add('replay', self::INSTANT);
-            }
-
-            if ($age < (int) ($params['protect_min_seconds'] ?? 0)) {
-                $add('too_fast', 3);
-            }
-
-            if (!empty($params['protect_pow']) && !self::powValid((string) ($data['stamp'] ?? ''), (string) ($data['pow'] ?? ''), (int) ($params['protect_pow_bits'] ?? 14))) {
-                $add('pow', self::INSTANT);
-            }
+        if ($age < (int) ($params['protect_min_seconds'] ?? 0)) {
+            $add('too_fast', 3);
         }
 
         if (!empty($params['protect_behavior']) && !self::humanSeen((string) ($data['dfh'] ?? ''))) {
@@ -173,12 +168,6 @@ final class SubmissionGuard
             $add('rate', self::INSTANT);
         }
 
-        $flood = (int) ($params['protect_flood_limit'] ?? 0);
-
-        if ($flood > 0 && (int) ($extra['recent_form'] ?? 0) >= $flood) {
-            $add('flood', 3);
-        }
-
         $limit = max(1, (int) ($params['protect_score_limit'] ?? 3));
 
         return ['spam' => $score >= $limit, 'score' => min(255, $score), 'reasons' => $reasons];
@@ -219,28 +208,22 @@ final class SubmissionGuard
      * Одноразовый номер метки: повторная отправка с той же меткой (повтор запроса ботом, параллельные запросы) отклоняется.
      * Занять номер — одна вставка в таблицу с уникальным ключом: двое одновременно его не займут.
      */
-    private static function useNonce(string $nonce): bool
+    public static function consumeStamp(string $stamp): bool
     {
+        $nonce = explode('.', $stamp, 3)[1] ?? '';
         if (!preg_match('~^[a-f0-9]{12}$~', $nonce)) {
             return false;
         }
 
-        try {
-            $db  = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-            $now = Factory::getDate();
-
-            $db->setQuery('INSERT IGNORE INTO ' . $db->quoteName('#__dharmaform_nonces') . ' (nonce, created) VALUES (' . $db->quote($nonce) . ', ' . $db->quote($now->toSql()) . ')')->execute();
-            $first = $db->getAffectedRows() === 1;
-
-            // Старые номера (метка живёт два часа) убираются изредка, чтобы таблица не росла.
-            if (random_int(1, 50) === 1) {
-                $db->setQuery('DELETE FROM ' . $db->quoteName('#__dharmaform_nonces') . ' WHERE created < ' . $db->quote(Factory::getDate('-3 hours')->toSql()))->execute();
-            }
-
-            return $first;
-        } catch (\Throwable) {
-            return true;
+        $db = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        if (random_int(1, 50) === 1) {
+            $db->setQuery('DELETE FROM ' . $db->quoteName('#__dharmaform_nonces') . ' WHERE created < ' . $db->quote(Factory::getDate('-3 hours')->toSql()))->execute();
         }
+
+        $now = Factory::getDate();
+        $db->setQuery('INSERT IGNORE INTO ' . $db->quoteName('#__dharmaform_nonces') . ' (nonce, created) VALUES (' . $db->quote($nonce) . ', ' . $db->quote($now->toSql()) . ')')->execute();
+
+        return $db->getAffectedRows() === 1;
     }
 
     /** Очевидная «абракадабра»: длинные цепочки согласных, повторы одного знака, случайный регистр, сплошные заглавные. */

@@ -33,7 +33,28 @@ final class FileUploader
     ];
 
     /** Разрешённые типы по умолчанию (пока в настройках компонента ничего не сохранено). */
-    public const DEFAULT_ALLOWED = 'jpg, jpeg, png, gif, webp, pdf, docx, xlsx, pptx, odt, ods, txt, csv';
+    public const DEFAULT_ALLOWED = 'jpg, jpeg, png, gif, webp, pdf, docx, xlsx, pptx, odt, ods';
+
+    private const MIME_TYPES = [
+        'jpg' => ['image/jpeg'], 'jpeg' => ['image/jpeg'], 'png' => ['image/png'], 'gif' => ['image/gif'], 'webp' => ['image/webp'],
+        'pdf' => ['application/pdf'],
+        'docx' => ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/zip'],
+        'xlsx' => ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/zip'],
+        'pptx' => ['application/vnd.openxmlformats-officedocument.presentationml.presentation', 'application/zip'],
+        'odt' => ['application/vnd.oasis.opendocument.text', 'application/zip'],
+        'ods' => ['application/vnd.oasis.opendocument.spreadsheet', 'application/zip'],
+        'odp' => ['application/vnd.oasis.opendocument.presentation', 'application/zip'],
+        'txt' => ['text/plain'], 'csv' => ['text/plain', 'text/csv', 'application/csv'],
+        'doc' => ['application/msword'], 'xls' => ['application/vnd.ms-excel'], 'ppt' => ['application/vnd.ms-powerpoint'],
+        'rtf' => ['application/rtf', 'text/rtf'], 'zip' => ['application/zip'],
+        'rar' => ['application/vnd.rar', 'application/x-rar'], '7z' => ['application/x-7z-compressed'],
+    ];
+
+    private const OFFICE_PARTS = [
+        'docx' => ['word/document.xml', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml'],
+        'xlsx' => ['xl/workbook.xml', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml'],
+        'pptx' => ['ppt/presentation.xml', 'application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml'],
+    ];
 
     /** Начало содержимого, по которому тип файла подтверждается независимо от расширения (регулярные выражения для первых байт). */
     private const SIGNATURES = [
@@ -41,7 +62,7 @@ final class FileUploader
         'pdf'  => '~^.{0,1024}%PDF-~s',
         'docx' => '~^PK\x03\x04~', 'xlsx' => '~^PK\x03\x04~', 'pptx' => '~^PK\x03\x04~', 'odt' => '~^PK\x03\x04~', 'ods' => '~^PK\x03\x04~', 'odp' => '~^PK\x03\x04~', 'zip' => '~^PK\x03\x04~',
         'doc'  => '~^\xD0\xCF\x11\xE0~', 'xls' => '~^\xD0\xCF\x11\xE0~', 'ppt' => '~^\xD0\xCF\x11\xE0~',
-        'rar'  => '~^Rar!\x1A\x07~', '7z' => '~^7z\xBC\xAF\x27\x1C~', 'rtf' => '~^\{\\rtf~',
+        'rar'  => '~^Rar!\x1A\x07~', '7z' => '~^7z\xBC\xAF\x27\x1C~',
     ];
 
     /** Расширение, под которым файл лежит на диске: никакого исполняемого или «умного» типа, поэтому сервер его не выполнит, даже если закрытие каталога не сработало. */
@@ -96,7 +117,7 @@ final class FileUploader
         foreach (preg_split('~[\s,;]+~', strtolower($list), -1, PREG_SPLIT_NO_EMPTY) ?: [] as $ext) {
             $ext = ltrim($ext, '.');
 
-            if (preg_match('~^[a-z0-9]{1,10}$~', $ext) && !\in_array($ext, self::BLOCKED, true)) {
+            if (isset(self::MIME_TYPES[$ext])) {
                 $out[$ext] = $ext;
             }
         }
@@ -118,7 +139,7 @@ final class FileUploader
         $global = self::globalAllowed();
         $field  = self::parse($accept);
 
-        return $field ? array_values(array_intersect($field, $global)) : $global;
+        return trim($accept) !== '' ? array_values(array_intersect($field, $global)) : $global;
     }
 
     /**
@@ -166,9 +187,9 @@ final class FileUploader
                 return $err('COM_DHARMAFORM_FORM_ERROR_FILE_SIZE', max(1, (int) $field['file_max_mb']));
             }
 
-            $mime = self::mime((string) $file['tmp_name']);
+            $mime = self::verifiedMime((string) $file['tmp_name'], $ext);
 
-            if (!self::contentOk((string) $file['tmp_name'], $ext)) {
+            if ($mime === null) {
                 return $err('COM_DHARMAFORM_FORM_ERROR_FILE_TYPE', implode(', ', $allowed));
             }
 
@@ -284,21 +305,23 @@ final class FileUploader
         return $name;
     }
 
-    private static function mime(string $file): string
+    public static function verifiedMime(string $file, string $ext): ?string
     {
-        if (!\function_exists('finfo_open')) {
-            return '';
+        if (!isset(self::MIME_TYPES[$ext]) || !\class_exists(\finfo::class)) {
+            return null;
         }
 
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mime  = $finfo ? (string) finfo_file($finfo, $file) : '';
+        $mime = (new \finfo(FILEINFO_MIME_TYPE))->file($file);
+        if (!\in_array($mime, self::MIME_TYPES[$ext], true) || !self::contentOk($file, $ext)) {
+            return null;
+        }
 
         return $mime;
     }
 
     /**
      * Содержимое подтверждает тип: начало файла (подпись) должно соответствовать расширению, а у текстовых и неизвестных
-     * типов в начале не должно быть кода PHP и HTML. Не зависит от расширения `fileinfo` на сервере.
+     * типов в начале не должно быть кода PHP и HTML.
      */
     private static function contentOk(string $file, string $ext): bool
     {
@@ -308,11 +331,85 @@ final class FileUploader
             return false;
         }
 
-        if (isset(self::SIGNATURES[$ext])) {
-            return (bool) preg_match(self::SIGNATURES[$ext], $head);
+        if ($ext === 'rtf') {
+            return str_starts_with($head, '{\rtf');
         }
 
-        return !preg_match('~<\?(?:php|=)|<script\b|<html\b|<!doctype html|<svg\b~i', $head);
+        if (isset(self::SIGNATURES[$ext]) && !preg_match(self::SIGNATURES[$ext], $head)) {
+            return false;
+        }
+
+        if (isset(self::OFFICE_PARTS[$ext]) || \in_array($ext, ['odt', 'ods', 'odp'], true)) {
+            return self::officeArchiveOk($file, $ext);
+        }
+
+        if ($ext === 'txt' || $ext === 'csv') {
+            $stream = @fopen($file, 'rb');
+            if (!$stream) {
+                return false;
+            }
+            $tail = '';
+            try {
+                while (!feof($stream)) {
+                    $chunk = fread($stream, 8192);
+                    if ($chunk === false || preg_match('~[\x00-\x08\x0B\x0C\x0E-\x1F]|<\?(?:php|=)|<script\b|<html\b|<!doctype\s+html|<svg\b~i', $tail . $chunk)) {
+                        return false;
+                    }
+                    $tail = substr($chunk, -64);
+                }
+            } finally {
+                fclose($stream);
+            }
+        }
+
+        return true;
+    }
+
+    private static function officeArchiveOk(string $file, string $ext): bool
+    {
+        if (!\class_exists(\ZipArchive::class)) {
+            return false;
+        }
+        $archive = new \ZipArchive();
+        if ($archive->open($file, \ZipArchive::RDONLY) !== true) {
+            return false;
+        }
+        try {
+            for ($i = 0; $i < $archive->numFiles; ++$i) {
+                $name = strtolower(str_replace('\\', '/', (string) $archive->getNameIndex($i)));
+                if (preg_match('~(?:^|/)(?:vbaproject[^/]*|activex|embeddings|basic|scripts)(?:/|$)~', $name)) {
+                    return false;
+                }
+            }
+
+            if (!isset(self::OFFICE_PARTS[$ext])) {
+                return $archive->getFromName('mimetype', 128) === self::MIME_TYPES[$ext][0]
+                    && $archive->locateName('content.xml') !== false;
+            }
+
+            [$part, $type] = self::OFFICE_PARTS[$ext];
+            $manifest = $archive->statName('[Content_Types].xml');
+            if ($manifest === false || $manifest['size'] > 1048576 || $archive->locateName($part) === false) {
+                return false;
+            }
+            $contents = $archive->getFromName('[Content_Types].xml');
+            if ($contents === false || stripos($contents, '<!DOCTYPE') !== false || stripos($contents, 'macroEnabled') !== false) {
+                return false;
+            }
+            $xml = @simplexml_load_string($contents, \SimpleXMLElement::class, LIBXML_NONET);
+            if ($xml === false) {
+                return false;
+            }
+            foreach ($xml->children('http://schemas.openxmlformats.org/package/2006/content-types') as $entry) {
+                $attributes = $entry->attributes();
+                if ($entry->getName() === 'Override' && (string) $attributes['PartName'] === '/' . $part && (string) $attributes['ContentType'] === $type) {
+                    return true;
+                }
+            }
+            return false;
+        } finally {
+            $archive->close();
+        }
     }
 
     /** Закрыть каталог загрузок от прямого доступа (Apache, IIS) и от показа списка файлов. */

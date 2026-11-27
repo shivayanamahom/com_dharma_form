@@ -82,7 +82,7 @@ class HtmlView extends BaseHtmlView
             $childBar->standardButton('notspam', 'COM_DHARMAFORM_TOOLBAR_MARK_NOTSPAM', 'submissions.notspam')->icon('icon-check')->listCheck(true);
         }
 
-        if (!$this->isEmptyState && $canDo->get('submission.export')) {
+        if (!$this->isEmptyState && $canDo->get('core.manage') && $canDo->get('submission.view') && $canDo->get('submission.export')) {
             $toolbar->standardButton('export', 'COM_DHARMAFORM_TOOLBAR_EXPORT', 'submissions.export')->icon('icon-download');
         }
 

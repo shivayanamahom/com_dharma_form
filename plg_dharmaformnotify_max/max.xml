@@ -5,7 +5,7 @@
 	<creationDate>2026-11</creationDate>
 	<copyright>(C) 2026 Dharma. Все права защищены.</copyright>
 	<license>GNU General Public License версии 2 или новее; см. LICENSE.txt</license>
-	<version>0.1.0</version>
+	<version>0.1.1</version>
 	<description>PLG_DHARMAFORMNOTIFY_MAX_DESCRIPTION</description>
 	<namespace path="src">Dharma\Plugin\DharmaFormNotify\Max</namespace>
 	<files>

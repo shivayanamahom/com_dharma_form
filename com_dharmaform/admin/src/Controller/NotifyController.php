@@ -27,12 +27,13 @@ class NotifyController extends BaseController
     {
         $this->app->setHeader('Cache-Control', 'no-store', true);
 
-        if (!Session::checkToken('get') || !$this->app->getIdentity()->authorise('core.admin', 'com_dharmaform')) {
+        if ($this->input->getMethod() !== 'POST' || !Session::checkToken('post')
+            || !$this->app->getIdentity()->authorise('core.admin', 'com_dharmaform')) {
             echo new JsonResponse(null, Text::_('JINVALID_TOKEN_NOTICE'), true);
             $this->app->close();
         }
 
-        $channel = $this->input->getCmd('channel', '');
+        $channel = $this->input->post->getCmd('channel', '');
 
         if (!\in_array($channel, ['email', 'telegram', 'max'], true)) {
             echo new JsonResponse(null, Text::_('JERROR_AN_ERROR_HAS_OCCURRED'), true);

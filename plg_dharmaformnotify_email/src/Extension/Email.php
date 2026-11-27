@@ -14,6 +14,7 @@ namespace Dharma\Plugin\DharmaFormNotify\Email\Extension;
 
 use Dharma\Component\DharmaForm\Administrator\Notification\SubmissionNotification;
 use Dharma\Component\DharmaForm\Administrator\Notification\SubmissionNotificationService;
+use Dharma\Component\DharmaForm\Site\Service\FileUploader;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Mail\MailerFactoryInterface;
@@ -74,7 +75,7 @@ final class Email extends CMSPlugin implements SubscriberInterface
         $template = trim((string) $message->form['params']['notify_subject']) !== '' ? (string) $message->form['params']['notify_subject'] : (string) $settings->get('notify_email_subject', 'Новая заявка: {form} — {name}');
         $subject  = MailHelper::cleanLine($message->subject($template) ?: 'Новая заявка № ' . $message->submissionId);
         $text     = implode("\n", $message->lines(true));
-        $attach   = (int) $settings->get('notify_email_attach', 1) ? $this->attachments($message, (int) $settings->get('notify_email_attach_mb', 10)) : [];
+        $attach   = (int) $settings->get('notify_email_attach', 0) ? $this->attachments($message, (int) $settings->get('notify_email_attach_mb', 10)) : [];
         $html     = $message->html((string) (Factory::getApplication()->get('sitename') ?: 'Сайт'));
 
         foreach ($recipients as $email) {
@@ -136,7 +137,8 @@ final class Email extends CMSPlugin implements SubscriberInterface
         foreach ($message->files as $file) {
             $size = is_file($file['path']) ? (int) filesize($file['path']) : 0;
 
-            if ($size > 0 && $size <= $left) {
+            $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            if ($size > 0 && $size <= $left && FileUploader::verifiedMime($file['path'], $extension) !== null) {
                 $out[] = ['name' => $file['name'], 'path' => $file['path']];
                 $left -= $size;
             }
