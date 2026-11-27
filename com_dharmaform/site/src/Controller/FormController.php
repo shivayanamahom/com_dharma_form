@@ -52,7 +52,7 @@ class FormController extends BaseController
         }
         if (!$allowed) {
             http_response_code(429);
-            $this->app->setHeader('Retry-After', '60', true);
+            header('Retry-After: 60');
             $this->json(false, Text::_('COM_DHARMAFORM_FORM_ERROR_RATE'));
         }
 
@@ -167,7 +167,8 @@ class FormController extends BaseController
      */
     private function json(bool $ok, string $message, array $data = [], int $id = 0): never
     {
-        $this->app->setHeader('Cache-Control', 'no-store', true);
+        header('Content-Type: application/json; charset=utf-8');
+        header('Cache-Control: no-store');
         echo new JsonResponse($data, $message !== '' ? $message : null, !$ok);
 
         if ($id > 0) {
